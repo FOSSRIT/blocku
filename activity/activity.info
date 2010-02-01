@@ -1,7 +1,6 @@
 [Activity]
-name = blocku 
+name = Blocku
+service_name = org.sugarlabs.Blocku
+class = blocku_activity.BlockuActivity
+icon = blocku
 activity_version = 1
-host_version = 1
-service_name = org.laptop.community.blocku
-icon = activity
-exec = sugar-activity activity.Activity
