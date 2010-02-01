@@ -2,16 +2,26 @@
 import pygame
 #import gtk
 
-class BlockuGame:
+class Block:
+    pass
+
+class Puzzle:
+    def __init__(self, width, height, rule, edges, blocks=None):
+        self.width  = width
+        self.height = height
+        self.rule   = rule
+        self.edges  = edges
+        self.blocks = blocks or []
+        
+    def add_block(self, block):
+        self.blocks.push(block)
+
+class Game:
     def __init__(self):
         # Set up a clock for managing the frame rate.
         self.clock = pygame.time.Clock()
 
-        self.x = -100
-        self.y = 100
-
-        self.vx = 10
-        self.vy = 0
+        self.puzzle = Puzzle()
 
         self.paused = False
         
@@ -44,27 +54,7 @@ class BlockuGame:
                 elif event.type == pygame.VIDEORESIZE:
                     pygame.display.set_mode(event.size, pygame.RESIZABLE)
             
-            # Move the ball
-            if not self.paused:
-                self.x += self.vx
-                if self.x > screen.get_width() + 100:
-                    self.x = -100
-                
-                self.y += self.vy
-                if self.y > screen.get_height() - 100:
-                    self.y = screen.get_height() - 100
-                    self.vy = -self.vy
-                
-                self.vy += 5;
             
-            # Clear Display
-            screen.fill((255,255,255)) #255 for white
-
-            # Draw the ball
-            pygame.draw.circle(screen, (255,0,0), (self.x, self.y), 100)
-                    
-            # Flip Display
-            pygame.display.flip()  
             
             # Try to stay at 30 FPS
             self.clock.tick(30)
@@ -74,7 +64,7 @@ class BlockuGame:
 def main():
     pygame.init()
     pygame.display.set_mode((0, 0), pygame.RESIZABLE)
-    game = BlockuGame() 
+    game = Game() 
     game.run()
 
 if __name__ == '__main__':

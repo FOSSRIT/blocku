@@ -18,7 +18,7 @@ class BlockuActivity(sugar.activity.activity.Activity):
         self.paused = False
 
         # Create the game instance.
-        self.game = blocku.BlockuGame()
+        self.game = blocku.Game()
 
         # Build the activity toolbar.
         self.build_toolbar()
