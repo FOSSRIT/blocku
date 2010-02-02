@@ -3,18 +3,25 @@ import pygame
 #import gtk
 
 class Block:
-    pass
+    def __init__(self, north=None, east=None, south=None, west=None):
+        self.north = north
+        self.east  = east
+        self.south = south
+        self.west  = west
 
 class Puzzle:
-    def __init__(self, width, height, rule, edges, blocks=None):
-        self.width  = width
-        self.height = height
+    def __init__(self, rule):
         self.rule   = rule
-        self.edges  = edges
-        self.blocks = blocks or []
+        self.blocks = {}
         
-    def add_block(self, block):
-        self.blocks.push(block)
+    def add_block(self, block, coords):
+        self.blocks[coords] = block
+        
+    def get_blocks(self):
+        return self.blocks
+        
+    def shuffle(self):
+        pass
 
 class Game:
     def __init__(self):
