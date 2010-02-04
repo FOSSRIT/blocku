@@ -73,6 +73,8 @@ def main():
     pygame.display.set_mode((0, 0), pygame.RESIZABLE)
     game = Game() 
     game.run()
+	>>> screen = [1,1,2,2,2,1]
+	>>> print screen
 
 if __name__ == '__main__':
     main()

@@ -13,7 +13,7 @@ import blocku
 
 class BlockuActivity(sugar.activity.activity.Activity):
     def __init__(self, handle):
-        super(BlockuActivity, self).__init__(handle,None)
+        super(BlockuActivity, self).__init__(handle)
         
         self.paused = False
 
