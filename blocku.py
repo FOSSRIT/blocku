@@ -2,7 +2,10 @@
 import pygame, random, os.path
 from pygame.locals import *
 from pygame import *
-#import gtk
+
+
+try: import gtk
+except ImportError: gtk = None
 
 #see if we can load more than standard BMP
 if not pygame.image.get_extended():
@@ -148,8 +151,8 @@ class Game:
 
         while self.running:
             # Pump GTK messages.
-            #while gtk.events_pending():
-            #    gtk.main_iteration()
+            while gtk and gtk.events_pending():
+                gtk.main_iteration()
 
             # Pump PyGame messages.
             for event in pygame.event.get():
