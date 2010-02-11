@@ -3,7 +3,6 @@ import pygame, random, os.path
 from pygame.locals import *
 from pygame import *
 
-
 try: import gtk
 except ImportError: gtk = None
 
@@ -107,11 +106,10 @@ class Game:
         # for gifs  img = load_image('filename.gif')
         # for bmps img = pygame.image.load('filename.bmp') but our function handles that for us
         # a note for graphics blit means copy pixels from screen.blit()
-        iconImg = load_image('Blocku_Icon.gif')
-        #background = load_image('background.gif')
-        background = load_image('background.bmp')
+        iconImg = load_image('blocku.png')
+        background = load_image('background.png')
         # load images to pipe to the sprite classes
-        blockImg = load_image('block.bmp')
+        blockImg = load_image('block.png')
         Block.images = [blockImg]
         # the test will need rects and positions i sugest make some kind of default
         # this information can be held by each block as they are created but is made here
@@ -200,7 +198,7 @@ class Text(pygame.sprite.Sprite):
         self.text = text
 
     def update(self):
-        msg = 'Drawing call test'
+        msg = '' # 'Drawing call test'
         self.image = self.font.render(msg, 0, self.color)
 
 class mouseUpdate(pygame.sprite.Sprite):
@@ -213,7 +211,7 @@ class mouseUpdate(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(50, 220)
 
     def update(self):
-        msg = 'Mouse Position %s, %s' % mouse.get_pos()
+        msg = '' # 'Mouse Position %s, %s' % mouse.get_pos()
         self.image = self.font.render(msg, 0, self.color)
 
 # This function is called when the game is run directly from the command line:
