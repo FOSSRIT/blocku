@@ -1,0 +1,6 @@
+[Activity]
+name = Blocku
+service_name = org.sugarlabs.Blocku
+class = blocku_activity.BlockuActivity
+icon = blocku
+activity_version = 1
