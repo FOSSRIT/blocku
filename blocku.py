@@ -16,7 +16,7 @@ except ImportError: gtk = None
 
 #see if we can load more than standard BMP
 if not pygame.image.get_extended():
-    raise SystemExit, "Sorry, extended image module required"
+    raise SystemExit("Sorry, extended image module required")
 
 #game constants
 SCREENRECT     = Rect(0, 0, 640, 480)
@@ -29,7 +29,7 @@ def load_image(file):
     try:
         surface = pygame.image.load(file)
     except pygame.error:
-        raise SystemExit, 'Could not load image "%s" %s'%(file, pygame.get_error())
+        raise SystemExit('Could not load image "%s" %s'%(file, pygame.get_error()))
     return surface.convert()
 
 def load_images(*files):
@@ -48,7 +48,7 @@ def load_sound(file):
         sound = pygame.mixer.Sound(file)
         return sound
     except pygame.error:
-        print 'Warning, unable to load,', file
+        print('Warning, unable to load,', file)
     return dummysound()
 
 class Block(pygame.sprite.Sprite):
@@ -57,6 +57,10 @@ class Block(pygame.sprite.Sprite):
     east=''
     south=''
     west=''
+    isLast = 0
+    isMoving = False
+    globX=1
+    globY=1
     def __init__(self, n='', e='', s='', w='', x='', y=''):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0].copy()
@@ -90,15 +94,24 @@ class Block(pygame.sprite.Sprite):
             self.rect.move_ip(0,KEYBOARDMOVESPEED)
         if direction == 3:
             self.rect.move_ip(-KEYBOARDMOVESPEED,0)
-
+    def setGrabbed(self, sett):
+        self.isMoving = sett
+    def isGrabbed(self):
+        return self.isMoving
     def grab(self, pos):
         x, y = pos;
+        globX=x
+        globY=y
         #print x , y
         #print self.rect.left, self.rect.top
         #self.rect = self.rect.move(x, y)
         #remember the offset here is 32 as this will center the mouse in our 64pixel image
         self.rect.left = x-32
         self.rect.top = y-32
+    def getX(self):
+        return globX
+    def getY(self):
+        return globY
     def rotate(self):
         temp = self.north
         self.north = self.east
@@ -130,6 +143,8 @@ class Game:
 
         self.paused = False
 
+        
+
     def set_paused(self, paused):
         self.paused = paused
 
@@ -144,9 +159,9 @@ class Game:
     # The main game loop.
     def run(self):
         self.running = True
-
+        isRan = 0
         if pygame.mixer and not pygame.mixer.get_init():
-            print 'Warning, no sound'
+            print('Warning, no sound')
             pygame.mixer = None
 
         #set the screen up
@@ -164,7 +179,18 @@ class Game:
         # load images to pipe to the sprite classes
         blockImg = load_image('block.png')
         Block.images = [blockImg]
-        gridImg = load_image('grid.png')
+        gridImg1 = load_image('square.png')
+        gridImg2 = load_image('square.png')
+        gridImg3 = load_image('square.png')
+        gridImg4 = load_image('square.png')
+        gridImg5 = load_image('square.png')
+        gridImg6 = load_image('square.png')
+        gridImg7 = load_image('square.png')
+        gridImg8 = load_image('square.png')
+        gridImg9 = load_image('square.png')
+
+        allGrid = [gridImg1,gridImg2,gridImg3,gridImg4,gridImg5,gridImg6,gridImg7,gridImg8,gridImg9]
+        
         # the test will need rects and positions i sugest make some kind of default
         # this information can be held by each block as they are created but is made here
 
@@ -173,8 +199,17 @@ class Game:
             screen.set_palette(background.get_palette())
         else:
             background = background.convert()
-
-        background.blit(gridImg,(200,200))
+        gridpos = [(200,200),(272,200),(344,200),(200,272),(272,272),(344,272),(200,344),(272,344),(344,344)]
+        background.blit(gridImg1, gridpos[0])
+        background.blit(gridImg2, gridpos[1])
+        background.blit(gridImg3, gridpos[2])
+        background.blit(gridImg4, gridpos[3])
+        background.blit(gridImg5, gridpos[4])
+        background.blit(gridImg6, gridpos[5])
+        background.blit(gridImg7, gridpos[6])
+        background.blit(gridImg8, gridpos[7])
+        background.blit(gridImg9, gridpos[8])
+        
         screen.blit(background,(0,0))
         pygame.display.flip()
 
@@ -190,15 +225,27 @@ class Game:
         blocks = pygame.sprite.Group()
         Block.containers = blocks,spriteBatch
         #blocks are Block(n,s,e,w,x,y) xy= starting position
+        
         aBlock = Block(1,2,3,4,200,200)
         bBlock = Block(5,6,7,8,300,300)
+        cBlock = Block(9,1,2,3,250,250)
+        dBlock = Block(4,5,6,7,350,350)
+        eBlock = Block(2,1,9,8,400,400)
+        fBlock = Block(3,4,5,6,450,450)
+        gBlock = Block(1,9,8,7,500,500)
+        hBlock = Block(2,3,4,5,550,550)
+        iBlock = Block(9,8,7,6,150,150)
+        allBlocks=[aBlock,bBlock,cBlock,dBlock,eBlock,fBlock,gBlock,hBlock,iBlock]
 
+        
+            
         global debugText
         debugText = ''
         #see if there is a sprite font
         if pygame.font:
             spriteBatch.add(Text('Drawing call test '))
             spriteBatch.add(mouseUpdate())
+            #spriteBatch.add(mainText())
 
         #if a key is down
         global keyDown
@@ -236,32 +283,40 @@ class Game:
             spriteBatch.clear(screen, background)
             # update all the sprites
             spriteBatch.update()
-            # handle player input
-            if keystate[K_UP]:
-                aBlock.move(0)
-            if keystate[K_RIGHT]:
-                aBlock.move(1)
-            if keystate[K_DOWN]:
-                aBlock.move(2)
-            if keystate[K_LEFT]:
-                aBlock.move(3)
-            if keystate[K_SPACE] and not keyDown:
-                aBlock.rotate()
-                keyDown = True
-
+            
             #for block in blocks:
             x, y = mouse.get_pos()
+            
+            for block in allBlocks:
+               # if keystate[K_SPACE] and not keyDown:
+               #     block.rotate()
+               #     keyDown = True
+                if block.isGrabbed() == True:
+                    debugText='ZOMG TORRENT PLZ'
+                isLast = block
+                if event.get_grab():
+                    debugText += ' holding mouse button 1'
+                    # and block.isGrabbed() == False
+                    if block.rect.collidepoint(x,y):
+                        block.grab(mouse.get_pos())
+                        block.setGrabbed(True)
+                        debugText += ' grabbed a Block'
+                        for tempblock in allBlocks:
+                            tempblock.isLast = 0
+                        block.isLast = 1
+                        isRan = 1
+                        break
+                elif isRan == 1 and block.isLast == 1:
+                    debugText = ''
+                    block.setGrabbed(False)
+                    #block.left = 250
+                    for piece in gridpos:
+                        if mouse.get_pos()[0] > piece[0] and mouse.get_pos()[0]< piece[0]+72 and mouse.get_pos()[1] > piece[1] and mouse.get_pos()[1]< piece[1]+72:
+                            debugText=str(piece)
+                            place = piece[0] + 36, piece[1] + 36
+                            isLast.grab(place)
+                            isRan = 0
 
-            if event.get_grab():
-                debugText = 'holding mouse button 1'
-                if aBlock.rect.collidepoint(x,y):
-                    aBlock.grab(mouse.get_pos())
-                    debugText += 'grabed aBlock'
-                elif bBlock.rect.collidepoint(x,y):
-                    bBlock.grab(mouse.get_pos())
-                    debugText += 'grabed bBlock'
-            else:
-                debugText = ''
             # note random here is random.random()
             # note foreach here is for object in
 
@@ -290,6 +345,7 @@ class Text(pygame.sprite.Sprite):
         self.image = self.font.render(msg, 0, self.color)
 
 class mouseUpdate(pygame.sprite.Sprite):
+    text=''
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.Font(None, 20)
@@ -299,8 +355,19 @@ class mouseUpdate(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(50, 220)
 
     def update(self):
-        msg = 'Mouse Position %s, %s' % mouse.get_pos()
+        #msg = 'Mouse Position %s, %s' % mouse.get_pos()
+        global mainText
+        msg = self.text + mainText
         self.image = self.font.render(msg, 0, self.color)
+
+def mainMenu():
+    #iconImg = load_image('bg.png')
+
+    global mainText
+    mainText='33333333333333333333'
+            
+    game = Game()
+    game.run()
 
 # This function is called when the game is run directly from the command line:
 # ./TestGame.py 
@@ -308,11 +375,13 @@ def main():
     # Initialize pygame
     pygame.init()
 
-    # Initializa game
-    game = Game()
+    # Initialize a game
+    #game = Game()
 
+    mainMenu()
+    
     # Run the game
-    game.run()
+    #game.run()
 
 #call the "main" function if python is running this script
 if __name__ == '__main__':
