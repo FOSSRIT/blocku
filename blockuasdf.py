@@ -37,62 +37,6 @@ def load_images(*files):
     for file in files:
         imgs.append(load_image(file))
     return imgs
-# num - number of blocks on one side of grid (ex: pass in 3 for a 3x3 grid)
-def GenerateAddition(num, answer):
-    rows = list([] for i in range(num))
-    blocks = list([] for i in range(num * num))
-    for i in range(num):
-        rows[i] = list([] for i in range(num))
-
-    # x and y positions of starting point of grid
-    x = 100
-    y = 100
-    # answer to solve for
-
-    # populate the list with blocks
-    #blocks are Block(n,s,e,w,x,y) xy= starting position
-    for i in range(num):
-        for k in range(num):
-            temp = Block(-1, -1, -1, -1, (x + (i * 100)), (y + (k * 100)))
-            rows[i][k] = temp
-            #blocks[(i * 3) + k] = temp
-
-    # Left and right answers
-    for i in range(num):
-        for k in range(num):
-            # set the block's right side answer
-            rows[i][k].east = random.randint(0, answer)
-            # generate a random num for the block's west answer
-            if rows[i][k].west == -1:
-                rows[i][k].west = random.randint(0, answer + 10)
-            # check the left side answer of the block in the adjacent row
-            if (i + 1) < num:
-                rows[i + 1][k].west = (answer - rows[i][k].east)
-    #print(rows[3][2])
-
-    # Top and bottom answers
-    for i in range(num):
-        for k in range(num):
-            # set top answer if empty
-            if (rows[i][k].north == -1):
-                rows[i][k].north = random.randint(0, answer + 10)
-            # get random number for south
-            rows[i][k].south = random.randint(0, answer)
-            # get answer in block below the block we just filled in
-            if (k + 1) < num:
-                rows[i][k + 1].north = (answer - rows[i][k].south)
-
-    # get all the blocks into a single list
-    count = 0
-    print(count)
-    for i in range(num):
-        for k in range(num):
-            blocks[count] = rows[i][k]
-            count += 1
-
-    print(count)
-
-    return blocks
 
 class dummysound:
     def play(self): pass
@@ -199,8 +143,6 @@ class Game:
 
         self.paused = False
 
-
-
     def set_paused(self, paused):
         self.paused = paused
 
@@ -220,36 +162,42 @@ class Game:
             print('Warning, no sound')
             pygame.mixer = None
 
+        #set the screen up
         winstyle = 0  # |FULLSCREEN
         bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
         screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
 
-        spriteBatch = pygame.sprite.RenderUpdates()
+
         # load images here
         # for gifs  img = load_image('filename.gif')
         # for bmps img = pygame.image.load('filename.bmp') but our function handles that for us
         # a note for graphics blit means copy pixels from screen.blit()
-        squares = load_image('square.png')
-        background = load_image('background.png')
         iconImg = load_image('blocku.png')
-        blockImg = load_image('block.png')
-
-
+        background = load_image('background.png')
         # load images to pipe to the sprite classes
+        blockImg = load_image('block.png')
         Block.images = [blockImg]
-        gridImg1 = squares
-        gridImg2 = squares
-        gridImg3 = squares
-        gridImg4 = squares
-        gridImg5 = squares
-        gridImg6 = squares
-        gridImg7 = squares
-        gridImg8 = squares
-        gridImg9 = squares
+        gridImg1 = load_image('square.png')
+        gridImg2 = load_image('square.png')
+        gridImg3 = load_image('square.png')
+        gridImg4 = load_image('square.png')
+        gridImg5 = load_image('square.png')
+        gridImg6 = load_image('square.png')
+        gridImg7 = load_image('square.png')
+        gridImg8 = load_image('square.png')
+        gridImg9 = load_image('square.png')
+
         allGrid = [gridImg1,gridImg2,gridImg3,gridImg4,gridImg5,gridImg6,gridImg7,gridImg8,gridImg9]
+        
+        # the test will need rects and positions i sugest make some kind of default
+        # this information can be held by each block as they are created but is made here
 
+        #get the image and screen in the same format
+        if background.get_bitsize() == 8:
+            screen.set_palette(background.get_palette())
+        else:
+            background = background.convert()
         gridpos = [(200,200),(272,200),(344,200),(200,272),(272,272),(344,272),(200,344),(272,344),(344,344)]
-
         background.blit(gridImg1, gridpos[0])
         background.blit(gridImg2, gridpos[1])
         background.blit(gridImg3, gridpos[2])
@@ -259,20 +207,8 @@ class Game:
         background.blit(gridImg7, gridpos[6])
         background.blit(gridImg8, gridpos[7])
         background.blit(gridImg9, gridpos[8])
-
-        #get the image and screen in the same format
-        if background.get_bitsize() == 8:
-            set_palette(background.get_palette())
-        else:
-            background.convert()
-
+        
         screen.blit(background,(0,0))
-        # the test will need rects and positions i sugest make some kind of default
-        # this information can be held by each block as they are created but is made here
-
-
-
-
         pygame.display.flip()
 
         #to set the icon up and to decorate the game window
@@ -280,27 +216,24 @@ class Game:
         pygame.display.set_icon(icon)
         pygame.display.set_caption('Blocku')
 
-        #this next call is sort of like sprite batch . drawf
-
+        #this next call is sort of like sprite batch . draw
+        spriteBatch = pygame.sprite.RenderUpdates()
 
         #main blocku code structs
         blocks = pygame.sprite.Group()
         Block.containers = blocks,spriteBatch
         #blocks are Block(n,s,e,w,x,y) xy= starting position
-
-        #aBlock = Block(1,2,3,4,200,200)
-        #bBlock = Block(5,6,7,8,300,300)
-        #cBlock = Block(9,1,2,3,250,250)
-        #dBlock = Block(4,5,6,7,350,350)
-        #eBlock = Block(2,1,9,8,400,400)
-        #fBlock = Block(3,4,5,6,450,450)
-        #gBlock = Block(1,9,8,7,500,500)
-        #hBlock = Block(2,3,4,5,550,550)
-        #iBlock = Block(9,8,7,6,150,150)
-        #allBlocks=[aBlock,bBlock,cBlock,dBlock,eBlock,fBlock,gBlock,hBlock,iBlock]
-
-        allBlocks = GenerateAddition(3, 42)
-        print(allBlocks)
+        
+        aBlock = Block(1,2,3,4,200,200)
+        bBlock = Block(5,6,7,8,300,300)
+        cBlock = Block(9,1,2,3,250,250)
+        dBlock = Block(4,5,6,7,350,350)
+        eBlock = Block(2,1,9,8,400,400)
+        fBlock = Block(3,4,5,6,450,450)
+        gBlock = Block(1,9,8,7,500,500)
+        hBlock = Block(2,3,4,5,550,550)
+        iBlock = Block(9,8,7,6,150,150)
+        allBlocks=[aBlock,bBlock,cBlock,dBlock,eBlock,fBlock,gBlock,hBlock,iBlock]
 
         global debugText
         debugText = ''
@@ -308,7 +241,6 @@ class Game:
         if pygame.font:
             spriteBatch.add(Text('Drawing call test '))
             spriteBatch.add(mouseUpdate())
-            #spriteBatch.add(mainText())
 
         #if a key is down
         global keyDown
@@ -346,10 +278,10 @@ class Game:
             spriteBatch.clear(screen, background)
             # update all the sprites
             spriteBatch.update()
-
+            
             #for block in blocks:
             x, y = mouse.get_pos()
-
+            
             for block in allBlocks:
                # if keystate[K_SPACE] and not keyDown:
                #     block.rotate()
@@ -408,7 +340,6 @@ class Text(pygame.sprite.Sprite):
         self.image = self.font.render(msg, 0, self.color)
 
 class mouseUpdate(pygame.sprite.Sprite):
-    text=''
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.Font(None, 20)
@@ -419,88 +350,19 @@ class mouseUpdate(pygame.sprite.Sprite):
 
     def update(self):
         msg = 'Mouse Position %s, %s' % mouse.get_pos()
-        msg = self.text + msg
         self.image = self.font.render(msg, 0, self.color)
 
-class MainMenu():
-    def __init__(self):
-        self.paused = False
-
-        #set the screen up
-        winstyle = 0  # |FULLSCREEN
-        bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
-        screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
-
-
-        pygame.display.set_caption('Blocku')
-
-
-        self.menuImg = load_image('bg.png')
-        self.background = load_image('background.png')
-
-        self.screen = pygame.display.set_mode((640,480))
-        #self.screen.blit(self.menuImg,(0,0))
-
-
-
-        #get the image and screen in the same format
-        if self.background.get_bitsize() == 8:
-            set_palette(self.background.get_palette())
-        else:
-            self.background.convert()
-
-        screen.blit(self.menuImg, (0,0))
-        #new game button is at (248,175) and is 166*65 pixels
-        #insturctions button is at (248, 254) and is 166*65 pixels
-        #exit is at (248, 407) and is 166*65 pixels
-        pygame.display.flip()
-
-        self.loop()
-
-    def loop(self):
-        exit = False
-        while not exit:
-            for event in pygame.event.get():
-                if event.type == MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        #new game. launches into a new game of blocku, with current default behavior of creating a new random grid
-                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 175 and event.pos[1] < 240:
-                            pygame.display.flip()
-                            game = Game()
-                            game.run()
-                            pygame.quit()
-
-                        #insturctions. need to change to show insturctions dialog box or whatever
-                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 254 and event.pos[1] < 319:
-                            pygame.display.flip()
-                            game = Game()
-                            game.run()
-                            pygame.quit()
-
-                        #exit button. exits the game
-                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 407 and event.pos[1] < 472:
-                            pygame.quit()
-
-
-
 # This function is called when the game is run directly from the command line:
-# ./TestGame.py
+# ./TestGame.py 
 def main():
-    pygame.init()
-    mMenu = MainMenu()
-    pygame.quit()
-    #mMenu.run()
     # Initialize pygame
-    #pygame.init()
+    pygame.init()
 
-    # Initialize a game
-    #game = Game()
-
-    #mainMenu()
+    # Initializa game
+    game = Game()
 
     # Run the game
-    #game.run()
-    #pygame.quit()
+    game.run()
 
 #call the "main" function if python is running this script
 if __name__ == '__main__':
