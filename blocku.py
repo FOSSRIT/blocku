@@ -12,7 +12,9 @@ from pygame.locals import *
 from pygame import *
 
 try: import gtk
-except ImportError: gtk = None
+except ImportError:
+    print('asdfasdf')
+    gtk = None
 
 #see if we can load more than standard BMP
 if not pygame.image.get_extended():
@@ -37,6 +39,7 @@ def load_images(*files):
     for file in files:
         imgs.append(load_image(file))
     return imgs
+
 # num - number of blocks on one side of grid (ex: pass in 3 for a 3x3 grid)
 def GenerateAddition(num, answer):
     rows = list([] for i in range(num))
@@ -94,6 +97,13 @@ def GenerateAddition(num, answer):
 
     return blocks
 
+def Solve(blocks):
+    for block in blocks:
+        if (block.rect.x != block.origX or block.rect.y != block.origY):
+            return -1
+
+    return 1
+
 class dummysound:
     def play(self): pass
 
@@ -117,10 +127,14 @@ class Block(pygame.sprite.Sprite):
     isMoving = False
     globX=1
     globY=1
+    origX = 0
+    origY = 0
     def __init__(self, n='', e='', s='', w='', x='', y=''):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0].copy()
         self.rect = pygame.Rect(x,y,64,64)
+        self.origX = x
+        self.origY = y
         self.font = pygame.font.Font(None, 20)
         self.font.set_italic(1)
         self.color = Color('blue')
@@ -288,25 +302,16 @@ class Game:
         Block.containers = blocks,spriteBatch
         #blocks are Block(n,s,e,w,x,y) xy= starting position
 
-        #aBlock = Block(1,2,3,4,200,200)
-        #bBlock = Block(5,6,7,8,300,300)
-        #cBlock = Block(9,1,2,3,250,250)
-        #dBlock = Block(4,5,6,7,350,350)
-        #eBlock = Block(2,1,9,8,400,400)
-        #fBlock = Block(3,4,5,6,450,450)
-        #gBlock = Block(1,9,8,7,500,500)
-        #hBlock = Block(2,3,4,5,550,550)
-        #iBlock = Block(9,8,7,6,150,150)
-        #allBlocks=[aBlock,bBlock,cBlock,dBlock,eBlock,fBlock,gBlock,hBlock,iBlock]
-
-        allBlocks = GenerateAddition(3, 42)
+        #generate random number between 20 and 99 for the answer to equal
+        answer = random.randint(20, 99)
+        allBlocks = GenerateAddition(3, answer)
         print(allBlocks)
 
         global debugText
-        debugText = ''
+        debugText = 'Arrange blocks so that addition equals ' + str(answer)
         #see if there is a sprite font
         if pygame.font:
-            spriteBatch.add(Text('Drawing call test '))
+            spriteBatch.add(Text(''))
             spriteBatch.add(mouseUpdate())
             #spriteBatch.add(mainText())
 
@@ -341,6 +346,10 @@ class Game:
             keystate = pygame.key.get_pressed()
             if not keystate[K_SPACE]:
                 keyDown = False
+            # Checks to see if the puzzle is solved
+            if keystate[K_a]:
+                result = Solve(allBlocks)
+                print(result)
             # for key test use keystate[key] and a return of true will occur when key down
             # clear/erase the last drawn sprites
             spriteBatch.clear(screen, background)
@@ -351,31 +360,29 @@ class Game:
             x, y = mouse.get_pos()
 
             for block in allBlocks:
-               # if keystate[K_SPACE] and not keyDown:
-               #     block.rotate()
-               #     keyDown = True
-                if block.isGrabbed() == True:
-                    debugText='ZOMG TORRENT PLZ'
+                if block.isLast == 1 and keystate[K_SPACE] and not keyDown:
+                    block.rotate()
+                    keyDown = True
                 isLast = block
                 if event.get_grab():
-                    debugText += ' holding mouse button 1'
+                    #debugText += ' holding mouse button 1'
                     # and block.isGrabbed() == False
                     if block.rect.collidepoint(x,y):
                         block.grab(mouse.get_pos())
                         block.setGrabbed(True)
-                        debugText += ' grabbed a Block'
+                        #debugText += ' grabbed a Block'
                         for tempblock in allBlocks:
                             tempblock.isLast = 0
                         block.isLast = 1
                         isRan = 1
                         break
                 elif isRan == 1 and block.isLast == 1:
-                    debugText = ''
+                    #debugText = ''
                     block.setGrabbed(False)
                     #block.left = 250
                     for piece in gridpos:
                         if mouse.get_pos()[0] > piece[0] and mouse.get_pos()[0]< piece[0]+72 and mouse.get_pos()[1] > piece[1] and mouse.get_pos()[1]< piece[1]+72:
-                            debugText=str(piece)
+                            #debugText=str(piece)
                             place = piece[0] + 36, piece[1] + 36
                             isLast.grab(place)
                             isRan = 0
@@ -423,6 +430,7 @@ class mouseUpdate(pygame.sprite.Sprite):
         self.image = self.font.render(msg, 0, self.color)
 
 class MainMenu():
+    instBool = False
     def __init__(self):
         self.paused = False
 
@@ -437,6 +445,7 @@ class MainMenu():
 
         self.menuImg = load_image('bg.png')
         self.background = load_image('background.png')
+        self.instImg = load_image('instructions.png')
 
         self.screen = pygame.display.set_mode((640,480))
         #self.screen.blit(self.menuImg,(0,0))
@@ -464,21 +473,27 @@ class MainMenu():
                 if event.type == MOUSEBUTTONDOWN:
                     if event.button == 1:
                         #new game. launches into a new game of blocku, with current default behavior of creating a new random grid
-                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 175 and event.pos[1] < 240:
+                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 175 and event.pos[1] < 240 and self.instBool == False:
                             pygame.display.flip()
                             game = Game()
                             game.run()
                             pygame.quit()
 
                         #insturctions. need to change to show insturctions dialog box or whatever
-                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 254 and event.pos[1] < 319:
+                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 254 and event.pos[1] < 319 and self.instBool == False:
+                            #pygame.display.flip()
+                            self.instBool = True
+                            self.screen.blit(self.instImg, (58,58))
                             pygame.display.flip()
-                            game = Game()
-                            game.run()
-                            pygame.quit()
+
+                        #close insturctions button
+                        if event.pos[0] > 526 and event.pos[0] < 587 and event.pos[1] > 336 and event.pos[1] < 365 and self.instBool == True:
+                            self.screen.blit(self.menuImg, (0,0))
+                            pygame.display.flip()
+                            self.instBool = False
 
                         #exit button. exits the game
-                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 407 and event.pos[1] < 472:
+                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 407 and event.pos[1] < 472 and self.instBool == False:
                             pygame.quit()
 
 
