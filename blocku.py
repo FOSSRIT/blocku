@@ -7,7 +7,7 @@ Authored by Fran Rogers and Ariel Zamparini
 """
 
 #!/usr/bin/python
-import pygame, random, os.path
+import pygame, random, os.path, os
 from pygame.locals import *
 from pygame import *
 
@@ -48,15 +48,15 @@ def GenerateAddition(num, answer):
         rows[i] = list([] for i in range(num))
 
     # x and y positions of starting point of grid
-    x = 100
-    y = 100
+    x = 204
+    y = 204
     # answer to solve for
 
     # populate the list with blocks
     #blocks are Block(n,s,e,w,x,y) xy= starting position
     for i in range(num):
         for k in range(num):
-            temp = Block(-1, -1, -1, -1, (x + (i * 100)), (y + (k * 100)))
+            temp = Block(-1, -1, -1, -1, (x + (i * 72)), (y + (k * 72)))
             rows[i][k] = temp
             #blocks[(i * 3) + k] = temp
 
@@ -64,13 +64,14 @@ def GenerateAddition(num, answer):
     for i in range(num):
         for k in range(num):
             # set the block's right side answer
-            rows[i][k].east = random.randint(0, answer)
+            rows[i][k].origEast = rows[i][k].east = random.randint(0, answer)
             # generate a random num for the block's west answer
             if rows[i][k].west == -1:
-                rows[i][k].west = random.randint(0, answer + 10)
+                rows[i][k].origWest = rows[i][k].west = random.randint(0, answer + 10)
             # check the left side answer of the block in the adjacent row
             if (i + 1) < num:
-                rows[i + 1][k].west = (answer - rows[i][k].east)
+                rows[i + 1][k].origWest = rows[i + 1][k].west = (answer - rows[i][k].east)
+                 #rows[i + 1][k].west
     #print(rows[3][2])
 
     # Top and bottom answers
@@ -78,31 +79,93 @@ def GenerateAddition(num, answer):
         for k in range(num):
             # set top answer if empty
             if (rows[i][k].north == -1):
-                rows[i][k].north = random.randint(0, answer + 10)
+                rows[i][k].origNorth = rows[i][k].north = random.randint(0, answer + 10)
+                 #rows[i][k].north
             # get random number for south
-            rows[i][k].south = random.randint(0, answer)
+            rows[i][k].origSouth = rows[i][k].south = random.randint(0, answer)
             # get answer in block below the block we just filled in
             if (k + 1) < num:
-                rows[i][k + 1].north = (answer - rows[i][k].south)
+                rows[i][k].origNorth = rows[i][k + 1].north = (answer - rows[i][k].south)
 
     # get all the blocks into a single list
     count = 0
-    print(count)
+    #print(count)
     for i in range(num):
         for k in range(num):
             blocks[count] = rows[i][k]
             count += 1
-
+            
+    # make sure all the original positions are saved
+    for block in blocks:
+        block.origNorth = block.north
+        block.origSouth = block.south
+        block.origEast = block.east
+        block.origWest = block.west
+        
     print(count)
 
-    return blocks
+
+    return blocks        
 
 def Solve(blocks):
     for block in blocks:
+        # checks original position
         if (block.rect.x != block.origX or block.rect.y != block.origY):
-            return -1
+            return "Incomplete"
+        # checks original rotation
+        if (block.north != block.origNorth or block.south != block.origSouth or block.east != block.origEast or block.west != block.origWest):
+            return "Incomplete"
+        
+    return "Solved!"
 
-    return 1
+# puts the blocks in random positions
+def Randomize(blocks):
+    for block in blocks:
+        block.rect.x = random.randint(72, 568)
+        block.rect.y = random.randint(72, 408)
+
+# read in a board called testFile.txt
+def LoadBoard():
+    # File format:
+    # ---------------
+    # Number of blocks in board
+    # X-Pos Y-Pos BlockHeight N S W E R G B
+    # NSWE = directions
+    # RGB = color of the block in RGB
+    
+    # For now, we'll ignore the block height and color
+    file = open("boards\\testFile.txt", "r")
+    numLines = file.readline()
+    print(numLines)
+    blocks = list([] for i in range(int(numLines)))
+    # read in each line and split it
+    for i in range(int(numLines)):
+        line = file.readline()
+        args = line.rsplit()
+        #blocks are Block(n,e,s,w,x,y) xy= starting position
+        blocks[i] = Block(args[3], args[6], args[4], args[5], int(args[0]), int(args[1]))
+
+    file.close()
+    
+    return blocks
+
+# Will grab the last line of the file
+def LastLine(read_size = 1024):
+    file = open("boards\\testFile.txt", 'rU')
+    lines = file.readlines()
+    file.close()
+
+    return lines[len(lines)-1]
+
+    
+def GenerateGrid(blocks):
+    gridPos = list([] for i in range(len(blocks)))
+
+    for k in range(len(blocks)):
+        gridPos[k] = (blocks[k].rect.x - 4, blocks[k].rect.y - 4)
+
+    #print(gridPos)
+    return gridPos
 
 class dummysound:
     def play(self): pass
@@ -123,6 +186,10 @@ class Block(pygame.sprite.Sprite):
     east=''
     south=''
     west=''
+    origNorth = ''
+    origSouth = ''
+    origWest = ''
+    origEast = ''
     isLast = 0
     isMoving = False
     globX=1
@@ -139,10 +206,18 @@ class Block(pygame.sprite.Sprite):
         self.font.set_italic(1)
         self.color = Color('blue')
         self.update()
+        print(n)
+        print(e)
+        print(s)
+        print(w)
         self.north = n
         self.east  = e
         self.south = s
         self.west  = w
+        self.origNorth = n
+        self.origEast = e
+        self.origSouth = s
+        self.origWest = w
 
     def update(self):
         #keep the block on the screen
@@ -234,6 +309,9 @@ class Game:
             print('Warning, no sound')
             pygame.mixer = None
 
+        # load a test sound
+        pygame.mixer.music.load("sounds\\trololo.ogg")
+        
         winstyle = 0  # |FULLSCREEN
         bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
         screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
@@ -247,6 +325,10 @@ class Game:
         background = load_image('background.png')
         iconImg = load_image('blocku.png')
         blockImg = load_image('block.png')
+
+        
+        # the test will need rects and positions i sugest make some kind of default
+        # this information can be held by each block as they are created but is made here
 
 
         # load images to pipe to the sprite classes
@@ -262,17 +344,30 @@ class Game:
         gridImg9 = squares
         allGrid = [gridImg1,gridImg2,gridImg3,gridImg4,gridImg5,gridImg6,gridImg7,gridImg8,gridImg9]
 
-        gridpos = [(200,200),(272,200),(344,200),(200,272),(272,272),(344,272),(200,344),(272,344),(344,344)]
 
-        background.blit(gridImg1, gridpos[0])
-        background.blit(gridImg2, gridpos[1])
-        background.blit(gridImg3, gridpos[2])
-        background.blit(gridImg4, gridpos[3])
-        background.blit(gridImg5, gridpos[4])
-        background.blit(gridImg6, gridpos[5])
-        background.blit(gridImg7, gridpos[6])
-        background.blit(gridImg8, gridpos[7])
-        background.blit(gridImg9, gridpos[8])
+        #main blocku code structs
+        blocks = pygame.sprite.Group()
+        Block.containers = blocks,spriteBatch
+        #blocks are Block(n,s,e,w,x,y) xy= starting position
+        
+        #generate random number between 20 and 99 for the answer to equal
+        answer = random.randint(20, 99)
+        #allBlocks = GenerateAddition(3, answer)
+        allBlocks = LoadBoard()
+        gridpos = GenerateGrid(allBlocks)
+        answerStr = LastLine()
+        #print(answerStr)
+        Randomize(allBlocks)
+        #print(allBlocks)
+
+
+        #gridpos = [(200,200),(272,200),(344,200),(200,272),(272,272),(344,272),(200,344),(272,344),(344,344)]
+        #print(gridpos[0][0])
+        
+        for i in range(len(gridpos)):
+            background.blit(gridImg1, gridpos[i])
+        
+
 
         #get the image and screen in the same format
         if background.get_bitsize() == 8:
@@ -281,11 +376,6 @@ class Game:
             background.convert()
 
         screen.blit(background,(0,0))
-        # the test will need rects and positions i sugest make some kind of default
-        # this information can be held by each block as they are created but is made here
-
-
-
 
         pygame.display.flip()
 
@@ -296,19 +386,22 @@ class Game:
 
         #this next call is sort of like sprite batch . drawf
 
+        
 
-        #main blocku code structs
-        blocks = pygame.sprite.Group()
-        Block.containers = blocks,spriteBatch
-        #blocks are Block(n,s,e,w,x,y) xy= starting position
 
-        #generate random number between 20 and 99 for the answer to equal
-        answer = random.randint(20, 99)
-        allBlocks = GenerateAddition(3, answer)
-        print(allBlocks)
-
+        pygame.display.flip()
+        """background.blit(gridImg1, gridpos[0])
+        background.blit(gridImg1, gridpos[1])
+        background.blit(gridImg1, gridpos[2])
+        background.blit(gridImg1, gridpos[3])
+        background.blit(gridImg1, gridpos[4])
+        background.blit(gridImg1, gridpos[5])
+        background.blit(gridImg1, gridpos[6])
+        background.blit(gridImg1, gridpos[7])
+        background.blit(gridImg1, gridpos[8])"""
         global debugText
-        debugText = 'Arrange blocks so that addition equals ' + str(answer)
+        #debugText = 'Arrange blocks so that addition equals ' + str(answer)
+        debugText = answerStr
         #see if there is a sprite font
         if pygame.font:
             spriteBatch.add(Text(''))
@@ -350,6 +443,11 @@ class Game:
             if keystate[K_a]:
                 result = Solve(allBlocks)
                 print(result)
+                if (result == "Solved!"):
+                    pygame.mixer.music.play()
+
+            #if keystate[K_b]:
+               # pygame.mixer.music.play()
             # for key test use keystate[key] and a return of true will occur when key down
             # clear/erase the last drawn sprites
             spriteBatch.clear(screen, background)
@@ -425,8 +523,9 @@ class mouseUpdate(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(50, 220)
 
     def update(self):
-        msg = 'Mouse Position %s, %s' % mouse.get_pos()
-        msg = self.text + msg
+        #msg = 'Mouse Position %s, %s' % mouse.get_pos()
+        #msg = self.text + msg
+        msg = ""
         self.image = self.font.render(msg, 0, self.color)
 
 class MainMenu():
