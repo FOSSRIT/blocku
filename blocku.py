@@ -352,15 +352,18 @@ class Game:
         
         #generate random number between 20 and 99 for the answer to equal
         answer = random.randint(20, 99)
-        #allBlocks = GenerateAddition(3, answer)
-        allBlocks = LoadBoard()
+        # Uncomment lines with an asterisk to make the game generate a random board again
+        # Lines with a double pound are used to load a board
+        #allBlocks = GenerateAddition(3, answer) #*
+        allBlocks = LoadBoard() ##
         gridpos = GenerateGrid(allBlocks)
-        answerStr = LastLine()
+        answerStr = LastLine()  ##
+        #answerStr = 'Arrange blocks so that addition equals ' + str(answer) #*
         #print(answerStr)
         Randomize(allBlocks)
         #print(allBlocks)
 
-
+        # Default grid positions - handled now by GenerateGrid()
         #gridpos = [(200,200),(272,200),(344,200),(200,272),(272,272),(344,272),(200,344),(272,344),(344,344)]
         #print(gridpos[0][0])
         
