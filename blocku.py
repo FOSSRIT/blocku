@@ -203,8 +203,8 @@ class Block(pygame.sprite.Sprite):
         self.origX = x
         self.origY = y
         self.font = pygame.font.Font(None, 20)
-        self.font.set_italic(1)
-        self.color = Color('blue')
+        #self.font.set_italic(1)
+        self.color = Color('black')
         self.update()
         print(n)
         print(e)
@@ -222,13 +222,11 @@ class Block(pygame.sprite.Sprite):
     def update(self):
         #keep the block on the screen
         self.rect = self.rect.clamp(SCREENRECT)
-        self.image = self.images[0].copy()
+        #self.image = self.images[0].copy()
         self.image.blit(self.font.render(str(self.north), 0, self.color),(26,3))
         self.image.blit(self.font.render(str(self.east), 0, self.color),(47,25))
         self.image.blit(self.font.render(str(self.south), 0, self.color),(26,47))
         self.image.blit(self.font.render(str(self.west), 0, self.color),(5,25))
-        # game logic here for snapping to grid ...?
-        # when the block is snapped to the grid clamp the rect there
     def move(self, direction):
         # up = 0, right = 1, down = 2, left = 3
         if direction == 0:
@@ -352,10 +350,18 @@ class Game:
         
         #generate random number between 20 and 99 for the answer to equal
         answer = random.randint(20, 99)
+        #
+        #
+        #
+        #RIGHT THE FUCK HERE FOR RANDOM OR READ IN
+        #
+        #
+        #
+        #
         # Uncomment lines with an asterisk to make the game generate a random board again
         # Lines with a double pound are used to load a board
-        #allBlocks = GenerateAddition(3, answer) #*
-        allBlocks = LoadBoard() ##
+        allBlocks = GenerateAddition(3, answer) #*
+        #allBlocks = LoadBoard() ##
         gridpos = GenerateGrid(allBlocks)
         answerStr = LastLine()  ##
         #answerStr = 'Arrange blocks so that addition equals ' + str(answer) #*
@@ -403,8 +409,8 @@ class Game:
         background.blit(gridImg1, gridpos[7])
         background.blit(gridImg1, gridpos[8])"""
         global debugText
-        #debugText = 'Arrange blocks so that addition equals ' + str(answer)
-        debugText = answerStr
+        debugText = 'Arrange blocks so that addition equals ' + str(answer)
+        #debugText = answerStr
         #see if there is a sprite font
         if pygame.font:
             spriteBatch.add(Text(''))
@@ -469,24 +475,32 @@ class Game:
                     #debugText += ' holding mouse button 1'
                     # and block.isGrabbed() == False
                     if block.rect.collidepoint(x,y):
+                        anotherBlock = 0
+                        for blockB in allBlocks:
+                            if blockB.isMoving == True and blockB != block:
+                                anotherBlock = 1
+                                break
+                        if anotherBlock == 0:
+                            block.grab(mouse.get_pos())
+                            block.setGrabbed(True)
+                            #debugText += ' grabbed a Block'
+                            for tempblock in allBlocks:
+                                tempblock.isLast = 0
+                            block.isLast = 1
+                            isRan = 1
+                            break
+                    elif block.isMoving == True:
                         block.grab(mouse.get_pos())
-                        block.setGrabbed(True)
-                        #debugText += ' grabbed a Block'
-                        for tempblock in allBlocks:
-                            tempblock.isLast = 0
-                        block.isLast = 1
-                        isRan = 1
-                        break
                 elif isRan == 1 and block.isLast == 1:
                     #debugText = ''
-                    block.setGrabbed(False)
                     #block.left = 250
                     for piece in gridpos:
-                        if mouse.get_pos()[0] > piece[0] and mouse.get_pos()[0]< piece[0]+72 and mouse.get_pos()[1] > piece[1] and mouse.get_pos()[1]< piece[1]+72:
+                        if mouse.get_pos()[0] > piece[0] and mouse.get_pos()[0]< piece[0]+72 and mouse.get_pos()[1] > piece[1] and mouse.get_pos()[1]< piece[1]+72 and block.isMoving == True:
                             #debugText=str(piece)
                             place = piece[0] + 36, piece[1] + 36
                             isLast.grab(place)
                             isRan = 0
+                    block.setGrabbed(False)
 
             # note random here is random.random()
             # note foreach here is for object in
