@@ -181,6 +181,7 @@ def load_sound(file):
     return dummysound()
 
 class Block(pygame.sprite.Sprite):
+    permImages = []
     images = []
     north=''
     east=''
@@ -197,8 +198,13 @@ class Block(pygame.sprite.Sprite):
     origX = 0
     origY = 0
     def __init__(self, n='', e='', s='', w='', x='', y=''):
-        pygame.sprite.Sprite.__init__(self, self.containers)
         self.image = self.images[0].copy()
+        Block.images = self.images[1:]
+        if len(Block.images) == 0:
+            Block.images = Block.permImages
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        
+        #Block.images = Block.images[1:]
         self.rect = pygame.Rect(x,y,64,64)
         self.origX = x
         self.origY = y
@@ -299,6 +305,10 @@ class Game:
     def read_file(self, file_path):
         pass
 
+    def load_all_images(self):
+        allBlockImages = [load_image('c1.png'),load_image('c2.png'),load_image('c3.png'),load_image('c4.png'),load_image('c5.png'),load_image('c6.png'),load_image('c7.png'),load_image('c8.png'),load_image('c9.png'),load_image('c10.png')]      
+
+
     # The main game loop.
     def run(self):
         self.running = True
@@ -322,7 +332,6 @@ class Game:
         squares = load_image('square.png')
         background = load_image('background.png')
         iconImg = load_image('blocku.png')
-        blockImg = load_image('block.png')
 
         
         # the test will need rects and positions i sugest make some kind of default
@@ -330,7 +339,11 @@ class Game:
 
 
         # load images to pipe to the sprite classes
-        Block.images = [blockImg]
+        
+        #Block.images = allBlockImages
+        tempImages = [load_image('c1.png'),load_image('c2.png'),load_image('c3.png'),load_image('c4.png'),load_image('c5.png'),load_image('c6.png'),load_image('c7.png'),load_image('c8.png'),load_image('c9.png')]
+        Block.images = tempImages
+        Block.permImages = tempImages
         gridImg1 = squares
         gridImg2 = squares
         gridImg3 = squares
@@ -353,14 +366,14 @@ class Game:
         #
         #
         #
-        #RIGHT THE FUCK HERE FOR RANDOM OR READ IN
+        #RIGHT HERE FOR RANDOM OR READ IN
         #
         #
         #
         #
         # Uncomment lines with an asterisk to make the game generate a random board again
         # Lines with a double pound are used to load a board
-        allBlocks = GenerateAddition(3, answer) #*
+        allBlocks = GenerateAddition(4, answer) #*
         #allBlocks = LoadBoard() ##
         gridpos = GenerateGrid(allBlocks)
         answerStr = LastLine()  ##
