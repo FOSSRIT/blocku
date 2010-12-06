@@ -13,7 +13,7 @@ from pygame import *
 
 try: import gtk
 except ImportError:
-    print('asdfasdf')
+    print('gtk error')
     gtk = None
 
 #see if we can load more than standard BMP
@@ -180,6 +180,8 @@ def load_sound(file):
         print('Warning, unable to load,', file)
     return dummysound()
 
+        
+#block class. this is the block with the numbers on it.
 class Block(pygame.sprite.Sprite):
     permImages = []
     images = []
@@ -199,6 +201,7 @@ class Block(pygame.sprite.Sprite):
     origY = 0
     def __init__(self, n='', e='', s='', w='', x='', y=''):
         self.image = self.images[0].copy()
+        self.blankImage = self.image.copy()
         Block.images = self.images[1:]
         if len(Block.images) == 0:
             Block.images = Block.permImages
@@ -229,11 +232,12 @@ class Block(pygame.sprite.Sprite):
         #keep the block on the screen
         self.rect = self.rect.clamp(SCREENRECT)
         #self.image = self.images[0].copy()
+        self.image = self.blankImage.copy()
         self.image.blit(self.font.render(str(self.north), 0, self.color),(26,3))
         self.image.blit(self.font.render(str(self.east), 0, self.color),(47,25))
         self.image.blit(self.font.render(str(self.south), 0, self.color),(26,47))
         self.image.blit(self.font.render(str(self.west), 0, self.color),(5,25))
-    def move(self, direction):
+    """def move(self, direction):
         # up = 0, right = 1, down = 2, left = 3
         if direction == 0:
             self.rect.move_ip(0,-KEYBOARDMOVESPEED)
@@ -242,7 +246,7 @@ class Block(pygame.sprite.Sprite):
         if direction == 2:
             self.rect.move_ip(0,KEYBOARDMOVESPEED)
         if direction == 3:
-            self.rect.move_ip(-KEYBOARDMOVESPEED,0)
+            self.rect.move_ip(-KEYBOARDMOVESPEED,0)"""
     def setGrabbed(self, sett):
         self.isMoving = sett
     def isGrabbed(self):
@@ -283,7 +287,10 @@ class Puzzle:
     def shuffle(self):
         pass
 
+
+#the main game class
 class Game:
+    
     def __init__(self):
         # Set up a clock for managing the frame rate.
         self.clock = pygame.time.Clock()
@@ -305,12 +312,9 @@ class Game:
     def read_file(self, file_path):
         pass
 
-    def load_all_images(self):
-        allBlockImages = [load_image('c1.png'),load_image('c2.png'),load_image('c3.png'),load_image('c4.png'),load_image('c5.png'),load_image('c6.png'),load_image('c7.png'),load_image('c8.png'),load_image('c9.png'),load_image('c10.png')]      
-
-
     # The main game loop.
     def run(self):
+        pygame.mouse.set_visible(False)
         self.running = True
         isRan = 0
         if pygame.mixer and not pygame.mixer.get_init():
@@ -341,6 +345,7 @@ class Game:
         # load images to pipe to the sprite classes
         
         #Block.images = allBlockImages
+        
         tempImages = [load_image('c1.png'),load_image('c2.png'),load_image('c3.png'),load_image('c4.png'),load_image('c5.png'),load_image('c6.png'),load_image('c7.png'),load_image('c8.png'),load_image('c9.png')]
         Block.images = tempImages
         Block.permImages = tempImages
@@ -373,7 +378,7 @@ class Game:
         #
         # Uncomment lines with an asterisk to make the game generate a random board again
         # Lines with a double pound are used to load a board
-        allBlocks = GenerateAddition(4, answer) #*
+        allBlocks = GenerateAddition(3, answer) #*
         #allBlocks = LoadBoard() ##
         gridpos = GenerateGrid(allBlocks)
         answerStr = LastLine()  ##
@@ -388,7 +393,6 @@ class Game:
         
         for i in range(len(gridpos)):
             background.blit(gridImg1, gridpos[i])
-        
 
 
         #get the image and screen in the same format
@@ -412,39 +416,34 @@ class Game:
 
 
         pygame.display.flip()
-        """background.blit(gridImg1, gridpos[0])
-        background.blit(gridImg1, gridpos[1])
-        background.blit(gridImg1, gridpos[2])
-        background.blit(gridImg1, gridpos[3])
-        background.blit(gridImg1, gridpos[4])
-        background.blit(gridImg1, gridpos[5])
-        background.blit(gridImg1, gridpos[6])
-        background.blit(gridImg1, gridpos[7])
-        background.blit(gridImg1, gridpos[8])"""
         global debugText
         debugText = 'Arrange blocks so that addition equals ' + str(answer)
         #debugText = answerStr
         #see if there is a sprite font
+        cursor = mouseUpdate()
         if pygame.font:
             spriteBatch.add(Text(''))
-            spriteBatch.add(mouseUpdate())
+            
             #spriteBatch.add(mainText())
+        spriteBatch.add(cursor)
 
         #if a key is down
         global keyDown
-        keyDown = False
+        
         # it is important to note that like xna the origin is 0,0
         # the top left of the current window
         # print is trace in console
         # and increases as you go down and to the right
         # pygame has a collision detector under pygame.sprite.spritecollide(group,group,dokill)
         # this will return a list of colliders, dokill will remove the colliders from the parrent group if true
-
+        mousePossible = True
         while self.running:
+            keyDown = False
             # Pump GTK messages.
             while gtk and gtk.events_pending():
                 gtk.main_iteration()
 
+            keystate = pygame.key.get_pressed()
             # Pump PyGame messages.
             for e in event.get():
                 if e.type == QUIT or \
@@ -454,11 +453,20 @@ class Game:
                     pygame.display.set_mode(e.size, pygame.RESIZABLE)
                 if e.type == MOUSEBUTTONDOWN:
                     event.set_grab(1)
+                    mousePossible = True
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
+                if e.type == KEYDOWN:
+                    if(e.key == K_SPACE):
+                        print'still down'
+                        event.set_grab(1)
+                elif e.type == KEYUP:
+                    if(e.key == K_SPACE):
+                        print'going up'
+                        event.set_grab(0)
 
             # get the state of the keyboard for input
-            keystate = pygame.key.get_pressed()
+            
             if not keystate[K_SPACE]:
                 keyDown = False
             # Checks to see if the puzzle is solved
@@ -477,24 +485,47 @@ class Game:
             spriteBatch.update()
 
             #for block in blocks:
-            x, y = mouse.get_pos()
+            x = cursor.rect.x
+            y = cursor.rect.y
 
+            
+            #pygame.event.get()
+            if keystate[K_LEFT]:
+                cursor.move(3)
+                mousePossible = False
+            if keystate[K_RIGHT]:
+                cursor.move(1)
+                mousePossible = False
+            if keystate[K_UP]:
+                cursor.move(0)
+                mousePossible = False
+            if keystate[K_DOWN]:
+                cursor.move(2)
+                mousePossible = False
+                
+            #cursor.grab(mouse.get_pos())
+            if mousePossible == True:
+                cursor.mouseMoved(mouse.get_pos())
+            
             for block in allBlocks:
-                if block.isLast == 1 and keystate[K_SPACE] and not keyDown:
+                #Block rotation when pressing enter
+                if block.isLast == 1 and keystate[K_RETURN] and not keyDown:
                     block.rotate()
                     keyDown = True
                 isLast = block
+
+                #For block dragging
                 if event.get_grab():
                     #debugText += ' holding mouse button 1'
                     # and block.isGrabbed() == False
-                    if block.rect.collidepoint(x,y):
+                    if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
                         anotherBlock = 0
                         for blockB in allBlocks:
                             if blockB.isMoving == True and blockB != block:
                                 anotherBlock = 1
                                 break
                         if anotherBlock == 0:
-                            block.grab(mouse.get_pos())
+                            block.grab([cursor.rect.x, cursor.rect.y])
                             block.setGrabbed(True)
                             #debugText += ' grabbed a Block'
                             for tempblock in allBlocks:
@@ -503,12 +534,12 @@ class Game:
                             isRan = 1
                             break
                     elif block.isMoving == True:
-                        block.grab(mouse.get_pos())
+                        block.grab([cursor.rect.x, cursor.rect.y])
                 elif isRan == 1 and block.isLast == 1:
                     #debugText = ''
                     #block.left = 250
                     for piece in gridpos:
-                        if mouse.get_pos()[0] > piece[0] and mouse.get_pos()[0]< piece[0]+72 and mouse.get_pos()[1] > piece[1] and mouse.get_pos()[1]< piece[1]+72 and block.isMoving == True:
+                        if cursor.rect.x > piece[0] and cursor.rect.x< piece[0]+72 and cursor.rect.y > piece[1] and cursor.rect.y< piece[1]+72 and block.isMoving == True:
                             #debugText=str(piece)
                             place = piece[0] + 36, piece[1] + 36
                             isLast.grab(place)
@@ -530,7 +561,7 @@ class Text(pygame.sprite.Sprite):
     text = ''
     def __init__(self,txt=''):
         pygame.sprite.Sprite.__init__(self)
-        self.font = pygame.font.Font(None, 20)
+        self.font = pygame.font.Font(None, 30)
         self.font.set_italic(1)
         self.color = Color('blue')
         self.update()
@@ -543,20 +574,37 @@ class Text(pygame.sprite.Sprite):
         self.image = self.font.render(msg, 0, self.color)
 
 class mouseUpdate(pygame.sprite.Sprite):
-    text=''
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.font = pygame.font.Font(None, 20)
-        self.font.set_italic(1)
-        self.color = Color('blue')
+        thisImg = load_image('mouse.png')
+        self.image = thisImg
         self.update()
         self.rect = self.image.get_rect().move(50, 220)
 
     def update(self):
-        #msg = 'Mouse Position %s, %s' % mouse.get_pos()
-        #msg = self.text + msg
-        msg = ""
-        self.image = self.font.render(msg, 0, self.color)
+        self.image = load_image('mouse.png')
+
+    def grab(self, pos):
+        x, y = pos;
+        globX=x
+        globY=y
+        self.rect.left = x-14
+        self.rect.top = y-16
+
+    def mouseMoved(self,mouse):
+        self.rect.x, self.rect.y = mouse
+        
+
+    def move(self, direction):
+        # up = 0, right = 1, down = 2, left = 3
+        if direction == 0:
+            self.rect.y += -KEYBOARDMOVESPEED
+        if direction == 1:
+            self.rect.x += KEYBOARDMOVESPEED
+        if direction == 2:
+            self.rect.y += KEYBOARDMOVESPEED
+        if direction == 3:
+            self.rect.x += -KEYBOARDMOVESPEED
 
 class MainMenu():
     instBool = False
