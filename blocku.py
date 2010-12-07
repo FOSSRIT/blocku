@@ -361,13 +361,20 @@ class Game:
         allGrid = [gridImg1,gridImg2,gridImg3,gridImg4,gridImg5,gridImg6,gridImg7,gridImg8,gridImg9]
 
 
+        
+        
+        #generate random number between 20 and 99 for the answer to equal
+        answer = random.randint(20, 99)
+        global debugText
+        debugText = 'Arrange blocks so that addition equals ' + str(answer)
+        #debugText = answerStr
+        #see if there is a sprite font
+        
+
         #main blocku code structs
         blocks = pygame.sprite.Group()
         Block.containers = blocks,spriteBatch
         #blocks are Block(n,s,e,w,x,y) xy= starting position
-        
-        #generate random number between 20 and 99 for the answer to equal
-        answer = random.randint(20, 99)
         #
         #
         #
@@ -412,23 +419,17 @@ class Game:
 
         #this next call is sort of like sprite batch . drawf
 
-        
-
-
         pygame.display.flip()
-        global debugText
-        debugText = 'Arrange blocks so that addition equals ' + str(answer)
-        #debugText = answerStr
-        #see if there is a sprite font
+        
+        #if a key is down
+        global keyDown
+
         cursor = mouseUpdate()
         if pygame.font:
             spriteBatch.add(Text(''))
             
             #spriteBatch.add(mainText())
         spriteBatch.add(cursor)
-
-        #if a key is down
-        global keyDown
         
         # it is important to note that like xna the origin is 0,0
         # the top left of the current window
@@ -457,17 +458,17 @@ class Game:
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
                 if e.type == KEYDOWN:
-                    if(e.key == K_SPACE):
+                    if(e.key == K_SPACE) or (e.key == K_KP3):
                         print'still down'
                         event.set_grab(1)
                 elif e.type == KEYUP:
-                    if(e.key == K_SPACE):
+                    if(e.key == K_SPACE) or (e.key == K_KP3):
                         print'going up'
                         event.set_grab(0)
 
             # get the state of the keyboard for input
             
-            if not keystate[K_SPACE]:
+            if not keystate[K_RETURN] or keystate[K_KP1]:
                 keyDown = False
             # Checks to see if the puzzle is solved
             if keystate[K_a]:
@@ -490,16 +491,16 @@ class Game:
 
             
             #pygame.event.get()
-            if keystate[K_LEFT]:
+            if keystate[K_LEFT] or keystate[K_KP4]:
                 cursor.move(3)
                 mousePossible = False
-            if keystate[K_RIGHT]:
+            if keystate[K_RIGHT] or keystate[K_KP6]:
                 cursor.move(1)
                 mousePossible = False
-            if keystate[K_UP]:
+            if keystate[K_UP] or keystate[K_KP8]:
                 cursor.move(0)
                 mousePossible = False
-            if keystate[K_DOWN]:
+            if keystate[K_DOWN] or keystate[K_KP2]:
                 cursor.move(2)
                 mousePossible = False
                 
@@ -509,7 +510,7 @@ class Game:
             
             for block in allBlocks:
                 #Block rotation when pressing enter
-                if block.isLast == 1 and keystate[K_RETURN] and not keyDown:
+                if block.isLast == 1 and (keystate[K_RETURN] or keystate[K_KP1]) and not keyDown:
                     block.rotate()
                     keyDown = True
                 isLast = block
@@ -536,11 +537,8 @@ class Game:
                     elif block.isMoving == True:
                         block.grab([cursor.rect.x, cursor.rect.y])
                 elif isRan == 1 and block.isLast == 1:
-                    #debugText = ''
-                    #block.left = 250
                     for piece in gridpos:
                         if cursor.rect.x > piece[0] and cursor.rect.x< piece[0]+72 and cursor.rect.y > piece[1] and cursor.rect.y< piece[1]+72 and block.isMoving == True:
-                            #debugText=str(piece)
                             place = piece[0] + 36, piece[1] + 36
                             isLast.grab(place)
                             isRan = 0
@@ -562,7 +560,7 @@ class Text(pygame.sprite.Sprite):
     def __init__(self,txt=''):
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.Font(None, 30)
-        self.font.set_italic(1)
+        #self.font.set_italic(1)
         self.color = Color('blue')
         self.update()
         self.rect = self.image.get_rect().move(55, 80)
@@ -618,17 +616,12 @@ class MainMenu():
 
 
         pygame.display.set_caption('Blocku')
-
-
         self.menuImg = load_image('bg.png')
         self.background = load_image('background.png')
         self.instImg = load_image('instructions.png')
 
         self.screen = pygame.display.set_mode((640,480))
         #self.screen.blit(self.menuImg,(0,0))
-
-
-
         #get the image and screen in the same format
         if self.background.get_bitsize() == 8:
             set_palette(self.background.get_palette())
@@ -636,6 +629,8 @@ class MainMenu():
             self.background.convert()
 
         screen.blit(self.menuImg, (0,0))
+        
+        self.addText()
         #new game button is at (248,175) and is 166*65 pixels
         #insturctions button is at (248, 254) and is 166*65 pixels
         #exit is at (248, 407) and is 166*65 pixels
@@ -643,7 +638,35 @@ class MainMenu():
 
         self.loop()
 
+    def addText(self):
+        if pygame.font:
+            font = pygame.font.Font(None, 34)
+
+            #Exit
+            exitt = font.render("Exit", 1, (255,255,255))
+            self.screen.blit(exitt,[300,430])
+
+            #instructions text itself
+            if self.instBool == True:
+                newFont = pygame.font.Font(None, 100)
+                instTitle = newFont.render("Instructions", 1, (255,0,0))
+                self.screen.blit(instTitle,[120,68])
+                
+            else:
+                #New Game
+                new = font.render("New Game", 1, (255, 255, 255))
+                self.screen.blit(new, [270,195])
+
+                #Game Modes
+                gMode = font.render("Game Modes", 1, (255,255,255))
+                self.screen.blit(gMode,[255,350])
+
+                #Instructions
+                instructs = font.render("Instructions", 1, (255,255,255))
+                self.screen.blit(instructs,[260,275])
+
     def loop(self):
+                
         exit = False
         while not exit:
             for event in pygame.event.get():
@@ -656,18 +679,21 @@ class MainMenu():
                             game.run()
                             pygame.quit()
 
-                        #insturctions. need to change to show insturctions dialog box or whatever
+                        #insturctions
                         if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 254 and event.pos[1] < 319 and self.instBool == False:
                             #pygame.display.flip()
                             self.instBool = True
                             self.screen.blit(self.instImg, (58,58))
+                            self.addText()
                             pygame.display.flip()
 
                         #close insturctions button
                         if event.pos[0] > 526 and event.pos[0] < 587 and event.pos[1] > 336 and event.pos[1] < 365 and self.instBool == True:
                             self.screen.blit(self.menuImg, (0,0))
-                            pygame.display.flip()
                             self.instBool = False
+                            self.addText()
+                            pygame.display.flip()
+                            
 
                         #exit button. exits the game
                         if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 407 and event.pos[1] < 472 and self.instBool == False:
