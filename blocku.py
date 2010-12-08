@@ -48,15 +48,15 @@ def GenerateAddition(num, answer):
         rows[i] = list([] for i in range(num))
 
     # x and y positions of starting point of grid
-    x = 204
-    y = 204
+    x = 398
+    y = 298
     # answer to solve for
 
     # populate the list with blocks
     #blocks are Block(n,s,e,w,x,y) xy= starting position
     for i in range(num):
         for k in range(num):
-            temp = Block(-1, -1, -1, -1, (x + (i * 108)), (y + (k * 108)))
+            temp = Block(-1, -1, -1, -1, (x + (i * 108)+100), (y + (k * 108)+50))
             rows[i][k] = temp
             #blocks[(i * 3) + k] = temp
 
@@ -102,6 +102,7 @@ def GenerateAddition(num, answer):
         block.origEast = block.east
         block.origWest = block.west
         
+        
     #print(count)
 
 
@@ -110,7 +111,7 @@ def GenerateAddition(num, answer):
 def Solve(blocks):
     for block in blocks:
         # checks original position
-        if (block.rect.x != block.origX or block.rect.y != block.origY):
+        if (block.rect.x != (block.origX + 0) or block.rect.y != (block.origY + 0)):
             return "Incomplete"
         # checks original rotation
         if (block.north != block.origNorth or block.south != block.origSouth or block.east != block.origEast or block.west != block.origWest):
@@ -168,7 +169,7 @@ def GenerateGrid(blocks):
     gridPos = list([] for i in range(len(blocks)))
 
     for k in range(len(blocks)):
-        gridPos[k] = (blocks[k].rect.x - 4 + 100, blocks[k].rect.y - 4 + 50)
+        gridPos[k] = (blocks[k].rect.x - 6, blocks[k].rect.y - 6)
 
     #print(gridPos)
     return gridPos
@@ -379,7 +380,7 @@ class Game:
         #
         # Uncomment lines with an asterisk to make the game generate a random board again
         # Lines with a double pound are used to load a board
-        allBlocks = GenerateAddition(3, answer) #*
+        allBlocks = GenerateAddition(4, answer) #*
         #allBlocks = LoadBoard() ##
         gridpos = GenerateGrid(allBlocks)
         answerStr = LastLine()  ##
@@ -468,8 +469,8 @@ class Game:
             if keystate[K_a]:
                 result = Solve(allBlocks)
                 print(result)
-                if (result == "Solved!"):
-                    pygame.mixer.music.play()
+                #if (result == "Solved!"):
+                    #pygame.mixer.music.play()
 
             #if keystate[K_b]:
                # pygame.mixer.music.play()
