@@ -21,7 +21,7 @@ if not pygame.image.get_extended():
     raise SystemExit("Sorry, extended image module required")
 
 #game constants
-SCREENRECT     = Rect(0, 0, 640, 480)
+SCREENRECT     = Rect(0, 0, 1200, 900)
 KEYBOARDMOVESPEED = 10
 
 
@@ -56,7 +56,7 @@ def GenerateAddition(num, answer):
     #blocks are Block(n,s,e,w,x,y) xy= starting position
     for i in range(num):
         for k in range(num):
-            temp = Block(-1, -1, -1, -1, (x + (i * 72)), (y + (k * 72)))
+            temp = Block(-1, -1, -1, -1, (x + (i * 108)), (y + (k * 108)))
             rows[i][k] = temp
             #blocks[(i * 3) + k] = temp
 
@@ -102,7 +102,7 @@ def GenerateAddition(num, answer):
         block.origEast = block.east
         block.origWest = block.west
         
-    print(count)
+    #print(count)
 
 
     return blocks        
@@ -121,8 +121,8 @@ def Solve(blocks):
 # puts the blocks in random positions
 def Randomize(blocks):
     for block in blocks:
-        block.rect.x = random.randint(72, 568)
-        block.rect.y = random.randint(72, 408)
+        block.rect.x = random.randint(200, 900)
+        block.rect.y = random.randint(200, 700)
 
 # read in a board called testFile.txt
 def LoadBoard():
@@ -134,26 +134,32 @@ def LoadBoard():
     # RGB = color of the block in RGB
     
     # For now, we'll ignore the block height and color
-    file = open("boards\\testFile.txt", "r")
-    numLines = file.readline()
-    print(numLines)
-    blocks = list([] for i in range(int(numLines)))
-    # read in each line and split it
-    for i in range(int(numLines)):
-        line = file.readline()
-        args = line.rsplit()
-        #blocks are Block(n,e,s,w,x,y) xy= starting position
-        blocks[i] = Block(args[3], args[6], args[4], args[5], int(args[0]), int(args[1]))
+    try:
+        file = open("boards\\testFile.txt", "r")
+        numLines = file.readline()
+        #print(numLines)
+        blocks = list([] for i in range(int(numLines)))
+        # read in each line and split it
+        for i in range(int(numLines)):
+            line = file.readline()
+            args = line.rsplit()
+            #blocks are Block(n,e,s,w,x,y) xy= starting position
+            blocks[i] = Block(args[3], args[6], args[4], args[5], int(args[0]), int(args[1]))
 
-    file.close()
+        file.close()
+    except:
+        blocks = blocks[0] = Block(1, 2, 3, 4, int(5), int(6))
     
     return blocks
 
 # Will grab the last line of the file
 def LastLine(read_size = 1024):
-    file = open("boards\\testFile.txt", 'rU')
-    lines = file.readlines()
-    file.close()
+    try:
+        file = open("boards\\testFile.txt", 'rU')
+        lines = file.readlines()
+        file.close()
+    except:
+        lines = 'Solve for: X + Y = 61'
 
     return lines[len(lines)-1]
 
@@ -162,7 +168,7 @@ def GenerateGrid(blocks):
     gridPos = list([] for i in range(len(blocks)))
 
     for k in range(len(blocks)):
-        gridPos[k] = (blocks[k].rect.x - 4, blocks[k].rect.y - 4)
+        gridPos[k] = (blocks[k].rect.x - 4 + 100, blocks[k].rect.y - 4 + 50)
 
     #print(gridPos)
     return gridPos
@@ -208,17 +214,13 @@ class Block(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self, self.containers)
         
         #Block.images = Block.images[1:]
-        self.rect = pygame.Rect(x,y,64,64)
+        self.rect = pygame.Rect(x,y,96,96)
         self.origX = x
         self.origY = y
-        self.font = pygame.font.Font(None, 20)
+        self.font = pygame.font.Font(None, 30)
         #self.font.set_italic(1)
         self.color = Color('black')
         self.update()
-        print(n)
-        print(e)
-        print(s)
-        print(w)
         self.north = n
         self.east  = e
         self.south = s
@@ -233,20 +235,11 @@ class Block(pygame.sprite.Sprite):
         self.rect = self.rect.clamp(SCREENRECT)
         #self.image = self.images[0].copy()
         self.image = self.blankImage.copy()
-        self.image.blit(self.font.render(str(self.north), 0, self.color),(26,3))
-        self.image.blit(self.font.render(str(self.east), 0, self.color),(47,25))
-        self.image.blit(self.font.render(str(self.south), 0, self.color),(26,47))
-        self.image.blit(self.font.render(str(self.west), 0, self.color),(5,25))
-    """def move(self, direction):
-        # up = 0, right = 1, down = 2, left = 3
-        if direction == 0:
-            self.rect.move_ip(0,-KEYBOARDMOVESPEED)
-        if direction == 1:
-            self.rect.move_ip(KEYBOARDMOVESPEED,0)
-        if direction == 2:
-            self.rect.move_ip(0,KEYBOARDMOVESPEED)
-        if direction == 3:
-            self.rect.move_ip(-KEYBOARDMOVESPEED,0)"""
+        self.image.blit(self.font.render(str(self.north), 0, self.color),(39,3))
+        self.image.blit(self.font.render(str(self.east), 0, self.color),(65,42))
+        self.image.blit(self.font.render(str(self.south), 0, self.color),(39,75))
+        self.image.blit(self.font.render(str(self.west), 0, self.color),(5,42))
+        
     def setGrabbed(self, sett):
         self.isMoving = sett
     def isGrabbed(self):
@@ -258,9 +251,9 @@ class Block(pygame.sprite.Sprite):
         #print x , y
         #print self.rect.left, self.rect.top
         #self.rect = self.rect.move(x, y)
-        #remember the offset here is 32 as this will center the mouse in our 64pixel image
-        self.rect.left = x-32
-        self.rect.top = y-32
+        #remember the offset here is 48 as this will center the mouse in our 96 pixel image
+        self.rect.left = x-48
+        self.rect.top = y-48
     def getX(self):
         return globX
     def getY(self):
@@ -294,9 +287,7 @@ class Game:
     def __init__(self):
         # Set up a clock for managing the frame rate.
         self.clock = pygame.time.Clock()
-
         self.puzzle = Puzzle()
-
         self.paused = False
 
 
@@ -322,20 +313,23 @@ class Game:
             pygame.mixer = None
 
         # load a test sound
-        pygame.mixer.music.load("sounds\\trololo.ogg")
+        #pygame.mixer.music.load("sounds\\trololo.ogg")
         
         winstyle = 0  # |FULLSCREEN
         bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
         screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
-
+        
+        squares = load_image('square.png')
+        background = load_image('background.png')
+        iconImg = load_image('blocku.png')
+        self.screen = pygame.display.set_mode((1200,900))
         spriteBatch = pygame.sprite.RenderUpdates()
+        
         # load images here
         # for gifs  img = load_image('filename.gif')
         # for bmps img = pygame.image.load('filename.bmp') but our function handles that for us
         # a note for graphics blit means copy pixels from screen.blit()
-        squares = load_image('square.png')
-        background = load_image('background.png')
-        iconImg = load_image('blocku.png')
+        
 
         
         # the test will need rects and positions i sugest make some kind of default
@@ -538,8 +532,8 @@ class Game:
                         block.grab([cursor.rect.x, cursor.rect.y])
                 elif isRan == 1 and block.isLast == 1:
                     for piece in gridpos:
-                        if cursor.rect.x > piece[0] and cursor.rect.x< piece[0]+72 and cursor.rect.y > piece[1] and cursor.rect.y< piece[1]+72 and block.isMoving == True:
-                            place = piece[0] + 36, piece[1] + 36
+                        if cursor.rect.x > piece[0] and cursor.rect.x< piece[0]+108 and cursor.rect.y > piece[1] and cursor.rect.y< piece[1]+108 and block.isMoving == True:
+                            place = piece[0] + 54, piece[1] + 54
                             isLast.grab(place)
                             isRan = 0
                     block.setGrabbed(False)
@@ -559,11 +553,11 @@ class Text(pygame.sprite.Sprite):
     text = ''
     def __init__(self,txt=''):
         pygame.sprite.Sprite.__init__(self)
-        self.font = pygame.font.Font(None, 30)
+        self.font = pygame.font.Font(None, 38)
         #self.font.set_italic(1)
         self.color = Color('blue')
         self.update()
-        self.rect = self.image.get_rect().move(55, 80)
+        self.rect = self.image.get_rect().move(253, 174)
         self.text = txt
 
     def update(self):
@@ -620,7 +614,7 @@ class MainMenu():
         self.background = load_image('background.png')
         self.instImg = load_image('instructions.png')
 
-        self.screen = pygame.display.set_mode((640,480))
+        self.screen = pygame.display.set_mode((1200,900))
         #self.screen.blit(self.menuImg,(0,0))
         #get the image and screen in the same format
         if self.background.get_bitsize() == 8:
@@ -631,39 +625,40 @@ class MainMenu():
         screen.blit(self.menuImg, (0,0))
         
         self.addText()
-        #new game button is at (248,175) and is 166*65 pixels
-        #insturctions button is at (248, 254) and is 166*65 pixels
-        #exit is at (248, 407) and is 166*65 pixels
         pygame.display.flip()
 
         self.loop()
 
     def addText(self):
         if pygame.font:
-            font = pygame.font.Font(None, 34)
+            font = pygame.font.Font(None, 50)
 
             #Exit
             exitt = font.render("Exit", 1, (255,255,255))
-            self.screen.blit(exitt,[300,430])
+            self.screen.blit(exitt,[570,810])
 
-            #instructions text itself
+            #instructions panel
             if self.instBool == True:
                 newFont = pygame.font.Font(None, 100)
                 instTitle = newFont.render("Instructions", 1, (255,0,0))
-                self.screen.blit(instTitle,[120,68])
+                self.screen.blit(instTitle,[390,314])
+
+                closeF = pygame.font.Font(None, 28)
+                close = closeF.render("Close",1,(255,0,0))
+                self.screen.blit(close,[800,577])
                 
             else:
                 #New Game
                 new = font.render("New Game", 1, (255, 255, 255))
-                self.screen.blit(new, [270,195])
+                self.screen.blit(new, [530,375])
 
                 #Game Modes
                 gMode = font.render("Game Modes", 1, (255,255,255))
-                self.screen.blit(gMode,[255,350])
+                self.screen.blit(gMode,[520,660])
 
                 #Instructions
                 instructs = font.render("Instructions", 1, (255,255,255))
-                self.screen.blit(instructs,[260,275])
+                self.screen.blit(instructs,[520,520])
 
     def loop(self):
                 
@@ -672,23 +667,32 @@ class MainMenu():
             for event in pygame.event.get():
                 if event.type == MOUSEBUTTONDOWN:
                     if event.button == 1:
+
+                        #new game button is at (382,269) and is 311,122 pixels
+                        #x gain of 84
+                        #y gain of 60
+                        #insturctions button is at (382, 392) and is 311,122 pixels
+                        #game mode is at (382, 510) and is 311,122 pixels
+                        #exit is at (382,625) and is 311,122 pixels
+                        #220,212
+                        #688,492    67,26
                         #new game. launches into a new game of blocku, with current default behavior of creating a new random grid
-                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 175 and event.pos[1] < 240 and self.instBool == False:
+                        if event.pos[0] > 466 and event.pos[0] < 777 and event.pos[1] > 329 and event.pos[1] < 451 and self.instBool == False:
                             pygame.display.flip()
                             game = Game()
                             game.run()
                             pygame.quit()
-
+                            
                         #insturctions
-                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 254 and event.pos[1] < 319 and self.instBool == False:
+                        if event.pos[0] > 466 and event.pos[0] < 777 and event.pos[1] > 478 and event.pos[1] < 600 and self.instBool == False:
                             #pygame.display.flip()
                             self.instBool = True
-                            self.screen.blit(self.instImg, (58,58))
+                            self.screen.blit(self.instImg, (328,294))
                             self.addText()
                             pygame.display.flip()
-
+                        
                         #close insturctions button
-                        if event.pos[0] > 526 and event.pos[0] < 587 and event.pos[1] > 336 and event.pos[1] < 365 and self.instBool == True:
+                        if event.pos[0] > 798 and event.pos[0] < 865 and event.pos[1] > 573 and event.pos[1] < 599 and self.instBool == True:
                             self.screen.blit(self.menuImg, (0,0))
                             self.instBool = False
                             self.addText()
@@ -696,7 +700,7 @@ class MainMenu():
                             
 
                         #exit button. exits the game
-                        if event.pos[0] > 248 and event.pos[0] < 414 and event.pos[1] > 407 and event.pos[1] < 472 and self.instBool == False:
+                        if event.pos[0] > 466 and event.pos[0] < 777 and event.pos[1] > 765 and event.pos[1] < 887 and self.instBool == False:
                             pygame.quit()
 
 
