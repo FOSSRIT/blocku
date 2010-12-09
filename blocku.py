@@ -10,6 +10,7 @@ Authored by Fran Rogers and Ariel Zamparini
 import pygame, random, os.path, os
 from pygame.locals import *
 from pygame import *
+from itertools import chain
 
 try: import gtk
 except ImportError:
@@ -309,6 +310,10 @@ class Game:
         pygame.mouse.set_visible(False)
         self.running = True
         isRan = 0
+
+        #pseudo timer
+        loopCounter = 0
+        
         if pygame.mixer and not pygame.mixer.get_init():
             print('Warning, no sound')
             pygame.mixer = None
@@ -321,6 +326,7 @@ class Game:
         screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
         
         squares = load_image('square.png')
+        global background
         background = load_image('background.png')
         iconImg = load_image('blocku.png')
         self.screen = pygame.display.set_mode((1200,900))
@@ -330,7 +336,14 @@ class Game:
         # for gifs  img = load_image('filename.gif')
         # for bmps img = pygame.image.load('filename.bmp') but our function handles that for us
         # a note for graphics blit means copy pixels from screen.blit()
-        
+        #Check solution text
+        cursor = mouseUpdate()            
+        spriteBatch.add(cursor)
+        if pygame.font:
+            font = pygame.font.Font(None, 42)
+            check = font.render("Check Answer", 1, (0,230,0))
+            background.blit(check,[978,840])
+            pygame.display.flip()
 
         
         # the test will need rects and positions i sugest make some kind of default
@@ -360,12 +373,14 @@ class Game:
         
         #generate random number between 20 and 99 for the answer to equal
         answer = random.randint(20, 99)
-        global debugText
+        #global debugText
         debugText = 'Arrange blocks so that addition equals ' + str(answer)
         #debugText = answerStr
         #see if there is a sprite font
         
-
+        if pygame.font:
+            spriteBatch.add(Text(debugText,253,174))
+            
         #main blocku code structs
         blocks = pygame.sprite.Group()
         Block.containers = blocks,spriteBatch
@@ -386,7 +401,7 @@ class Game:
         answerStr = LastLine()  ##
         #answerStr = 'Arrange blocks so that addition equals ' + str(answer) #*
         #print(answerStr)
-        Randomize(allBlocks)
+        #Randomize(allBlocks)
         #print(allBlocks)
 
         # Default grid positions - handled now by GenerateGrid()
@@ -397,6 +412,7 @@ class Game:
             background.blit(gridImg1, gridpos[i])
 
 
+        
         #get the image and screen in the same format
         if background.get_bitsize() == 8:
             set_palette(background.get_palette())
@@ -412,20 +428,16 @@ class Game:
         pygame.display.set_icon(icon)
         pygame.display.set_caption('Blocku')
 
-        #this next call is sort of like sprite batch . drawf
-
-        pygame.display.flip()
+        
         
         #if a key is down
         global keyDown
-
-        cursor = mouseUpdate()
-        if pygame.font:
-            spriteBatch.add(Text(''))
             
             #spriteBatch.add(mainText())
-        spriteBatch.add(cursor)
         
+        #cursor.move_to_front()
+        
+
         # it is important to note that like xna the origin is 0,0
         # the top left of the current window
         # print is trace in console
@@ -434,6 +446,14 @@ class Game:
         # this will return a list of colliders, dokill will remove the colliders from the parrent group if true
         mousePossible = True
         while self.running:
+            loopCounter += 1
+            if loopCounter > 50:
+                try:
+                    txt2.change('')
+                except:
+                    pass
+                loopCounter=0
+            pygame.display.flip()
             keyDown = False
             # Pump GTK messages.
             while gtk and gtk.events_pending():
@@ -450,27 +470,57 @@ class Game:
                 if e.type == MOUSEBUTTONDOWN:
                     event.set_grab(1)
                     mousePossible = True
+                    if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                            result = Solve(allBlocks)
+                            if pygame.font:
+                                if result=='Solved!':
+                                    txt = Text('You Win!',400,240,'red',142)
+                                    spriteBatch.add(txt)
+                                    try:
+                                        txt2.change('')
+                                    except:
+                                        pass
+                                else:
+                                    loopCounter = 0
+                                    try:
+                                        txt.change('')
+                                    except:
+                                        pass
+                                    txt2 = Text('Incomplete',400,240,'red',142)
+                                    spriteBatch.add(txt2)
+                                
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
                 if e.type == KEYDOWN:
                     if(e.key == K_SPACE) or (e.key == K_KP3):
-                        print'still down'
                         event.set_grab(1)
                 elif e.type == KEYUP:
                     if(e.key == K_SPACE) or (e.key == K_KP3):
-                        print'going up'
                         event.set_grab(0)
-
+                        if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                            result = Solve(allBlocks)
+                            if pygame.font:
+                                if result=='Solved!':
+                                    txt = Text('You Win!',400,240,'red',142)
+                                    spriteBatch.add(txt)
+                                    try:
+                                        txt2.change('')
+                                    except:
+                                        pass
+                                else:
+                                    loopCounter = 0
+                                    try:
+                                        txt.change('')
+                                    except:
+                                        pass
+                                    txt2 = Text('Incomplete',400,240,'red',142)
+                                    spriteBatch.add(txt2)
+                        
             # get the state of the keyboard for input
             
             if not keystate[K_RETURN] or keystate[K_KP1]:
                 keyDown = False
             # Checks to see if the puzzle is solved
-            if keystate[K_a]:
-                result = Solve(allBlocks)
-                print(result)
-                #if (result == "Solved!"):
-                    #pygame.mixer.music.play()
 
             #if keystate[K_b]:
                # pygame.mixer.music.play()
@@ -485,7 +535,7 @@ class Game:
             y = cursor.rect.y
 
             
-            #pygame.event.get()
+            #keyboard and gameboy buttons
             if keystate[K_LEFT] or keystate[K_KP4]:
                 cursor.move(3)
                 mousePossible = False
@@ -549,27 +599,32 @@ class Game:
 
             # Try to stay at 30 FPS
             self.clock.tick(30)
-
+            
 class Text(pygame.sprite.Sprite):
     text = ''
-    def __init__(self,txt=''):
+    def __init__(self,txt='',x=0,y=0,clr='blue',size=38):
         pygame.sprite.Sprite.__init__(self)
-        self.font = pygame.font.Font(None, 38)
-        #self.font.set_italic(1)
-        self.color = Color('blue')
+        self.font = pygame.font.Font(None, size)
+        self.color = Color(clr)
         self.update()
-        self.rect = self.image.get_rect().move(253, 174)
+        self.rect = self.image.get_rect().move(x, y)
         self.text = txt
 
     def update(self):
-        global debugText
-        msg = self.text + debugText
+        msg = self.text
         self.image = self.font.render(msg, 0, self.color)
+
+    def change(self, new=''):
+        self.text = new
+        self.update()
 
 class mouseUpdate(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         thisImg = load_image('mouse.png')
+        over = pygame.sprite.LayeredUpdates(*[self])
+
+        over.move_to_front(self)
         self.image = thisImg
         self.update()
         self.rect = self.image.get_rect().move(50, 220)
@@ -600,6 +655,7 @@ class mouseUpdate(pygame.sprite.Sprite):
             self.rect.x += -KEYBOARDMOVESPEED
 
 class MainMenu():
+    
     instBool = False
     def __init__(self):
         self.paused = False
@@ -630,6 +686,44 @@ class MainMenu():
 
         self.loop()
 
+    def truncline(self, text, font, maxwidth):
+        real=len(text)       
+        stext=text           
+        l=font.size(text)[0]
+        cut=0
+        a=0                  
+        done=1
+        old = None
+        while l > maxwidth:
+            a=a+1
+            n=text.rsplit(None, a)[0]
+            if stext == n:
+                cut += 1
+                stext= n[:-cut]
+            else:
+                stext = n
+            l=font.size(stext)[0]
+            real=len(stext)               
+            done=0                        
+        return real, done, stext             
+        
+    def wrapline(self, text, font, maxwidth): 
+        done=0                      
+        wrapped=[]                  
+                                   
+        while not done:             
+            nl, done, stext = self.truncline(text, font, maxwidth) 
+            wrapped.append(stext.strip())                  
+            text=text[nl:]                                 
+        return wrapped
+     
+     
+    def wrap_multi_line(self, text, font, maxwidth):
+        """ returns text taking new lines into account.
+        """
+        lines = chain(*(wrapline(line, font, maxwidth) for line in text.splitlines()))
+        return list(lines)
+
     def addText(self):
         if pygame.font:
             font = pygame.font.Font(None, 50)
@@ -643,6 +737,13 @@ class MainMenu():
                 newFont = pygame.font.Font(None, 100)
                 instTitle = newFont.render("Instructions", 1, (255,0,0))
                 self.screen.blit(instTitle,[390,314])
+
+                text = pygame.font.Font(None, 42)
+                welp = self.wrapline('Goal: position the blocks so that the numbers which are next to each other solve the given equation.      Controls: Use the mouse or Game Buttons to drag and drop the blocks. Use the return key to rotate, or the checkmark button.',text,500)
+                for i in range(len(welp)):
+                    newTxt=pygame.font.Font(None,42)
+                    newInst = newTxt.render(welp[i],1,(0,0,0))
+                    self.screen.blit(newInst,[370,370+(28*i)])
 
                 closeF = pygame.font.Font(None, 28)
                 close = closeF.render("Close",1,(255,0,0))
@@ -670,13 +771,9 @@ class MainMenu():
                     if event.button == 1:
 
                         #new game button is at (382,269) and is 311,122 pixels
-                        #x gain of 84
-                        #y gain of 60
                         #insturctions button is at (382, 392) and is 311,122 pixels
                         #game mode is at (382, 510) and is 311,122 pixels
                         #exit is at (382,625) and is 311,122 pixels
-                        #220,212
-                        #688,492    67,26
                         #new game. launches into a new game of blocku, with current default behavior of creating a new random grid
                         if event.pos[0] > 466 and event.pos[0] < 777 and event.pos[1] > 329 and event.pos[1] < 451 and self.instBool == False:
                             pygame.display.flip()
@@ -712,18 +809,6 @@ def main():
     pygame.init()
     mMenu = MainMenu()
     pygame.quit()
-    #mMenu.run()
-    # Initialize pygame
-    #pygame.init()
-
-    # Initialize a game
-    #game = Game()
-
-    #mainMenu()
-
-    # Run the game
-    #game.run()
-    #pygame.quit()
 
 #call the "main" function if python is running this script
 if __name__ == '__main__':
