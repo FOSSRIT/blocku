@@ -106,7 +106,6 @@ def GenerateAddition(num, answer):
         
     #print(count)
 
-
     return blocks        
 
 def Solve(blocks):
@@ -190,6 +189,7 @@ def load_sound(file):
 
         
 #block class. this is the block with the numbers on it.
+#http://www.pygame.org/docs/tut/chimp/chimp.py.html
 class Block(pygame.sprite.Sprite):
     permImages = []
     images = []
@@ -207,22 +207,28 @@ class Block(pygame.sprite.Sprite):
     globY=1
     origX = 0
     origY = 0
+    
     def __init__(self, n='', e='', s='', w='', x='', y=''):
+        pygame.sprite.Sprite.__init__(self)
         self.image = self.images[0].copy()
+        self.rect = self.images[0].copy()
         self.blankImage = self.image.copy()
         Block.images = self.images[1:]
         if len(Block.images) == 0:
             Block.images = Block.permImages
-        pygame.sprite.Sprite.__init__(self, self.containers)
-        
-        #Block.images = Block.images[1:]
+
+        screen = pygame.display.get_surface()
+        self.area = screen.get_rect()
         self.rect = pygame.Rect(x,y,96,96)
+
+        #self.update()
+        
+        #self.rect = pygame.Rect(x,y,96,96)
         self.origX = x
         self.origY = y
         self.font = pygame.font.Font(None, 30)
-        #self.font.set_italic(1)
         self.color = Color('black')
-        self.update()
+        
         self.north = n
         self.east  = e
         self.south = s
@@ -232,16 +238,20 @@ class Block(pygame.sprite.Sprite):
         self.origSouth = s
         self.origWest = w
 
+        self.update()
+    
+
     def update(self):
         #keep the block on the screen
         self.rect = self.rect.clamp(SCREENRECT)
-        #self.image = self.images[0].copy()
         self.image = self.blankImage.copy()
+        #self.image = self.images[0].copy()
         self.image.blit(self.font.render(str(self.north), 0, self.color),(39,3))
         self.image.blit(self.font.render(str(self.east), 0, self.color),(65,42))
         self.image.blit(self.font.render(str(self.south), 0, self.color),(39,75))
         self.image.blit(self.font.render(str(self.west), 0, self.color),(5,42))
         
+
     def setGrabbed(self, sett):
         self.isMoving = sett
     def isGrabbed(self):
@@ -250,10 +260,8 @@ class Block(pygame.sprite.Sprite):
         x, y = pos;
         globX=x
         globY=y
-        #print x , y
-        #print self.rect.left, self.rect.top
-        #self.rect = self.rect.move(x, y)
         #remember the offset here is 48 as this will center the mouse in our 96 pixel image
+        newPos = self.rect.move((x,y))
         self.rect.left = x-48
         self.rect.top = y-48
     def getX(self):
@@ -266,22 +274,6 @@ class Block(pygame.sprite.Sprite):
         self.east = self.south
         self.south = self.west
         self.west = temp
-        #print self.north, self.east, self.south, self.west
-
-class Puzzle:
-    def __init__(self):
-        #self.rule   = rule
-        self.blocks = {}
-
-    def add_block(self, block, coords):
-        self.blocks[coords] = block
-
-    def get_blocks(self):
-        return self.blocks
-
-    def shuffle(self):
-        pass
-
 
 #the main game class
 class Game:
@@ -289,7 +281,6 @@ class Game:
     def __init__(self):
         # Set up a clock for managing the frame rate.
         self.clock = pygame.time.Clock()
-        self.puzzle = Puzzle()
         self.paused = False
 
 
@@ -308,7 +299,6 @@ class Game:
     # The main game loop.
     def run(self):
         pygame.mouse.set_visible(False)
-        self.running = True
         isRan = 0
 
         #pseudo timer
@@ -328,22 +318,34 @@ class Game:
         squares = load_image('square.png')
         global background
         background = load_image('background.png')
+        background = background.convert()
         iconImg = load_image('blocku.png')
         self.screen = pygame.display.set_mode((1200,900))
-        spriteBatch = pygame.sprite.RenderUpdates()
+        #spriteBatch = pygame.sprite.RenderUpdates()
+
+        #generate random number between 20 and 99 for the answer to equal
+        answer = random.randint(20, 99)
+
+        if pygame.font:
+            objective = Text('Arrange blocks so that addition equals ' + str(answer),253,174) #Objective text
+            solved = Text('',400,240,'red',142)  #Text for when solved
+            unsolved = Text('',400,240,'red',142)  #text for when unsolved
+            
+            font = pygame.font.Font(None, 42)
+            check = font.render("Check Answer", 1, (0,230,0))
+            background.blit(check,[978,840])
+            pygame.display.flip()
+            
+        
         
         # load images here
         # for gifs  img = load_image('filename.gif')
         # for bmps img = pygame.image.load('filename.bmp') but our function handles that for us
         # a note for graphics blit means copy pixels from screen.blit()
         #Check solution text
-        cursor = mouseUpdate()            
-        spriteBatch.add(cursor)
-        if pygame.font:
-            font = pygame.font.Font(None, 42)
-            check = font.render("Check Answer", 1, (0,230,0))
-            background.blit(check,[978,840])
-            pygame.display.flip()
+        #cursor = mouseUpdate()            
+        #spriteBatch.add(cursor)
+            
 
         
         # the test will need rects and positions i sugest make some kind of default
@@ -358,32 +360,7 @@ class Game:
         Block.images = tempImages
         Block.permImages = tempImages
         gridImg1 = squares
-        gridImg2 = squares
-        gridImg3 = squares
-        gridImg4 = squares
-        gridImg5 = squares
-        gridImg6 = squares
-        gridImg7 = squares
-        gridImg8 = squares
-        gridImg9 = squares
-        allGrid = [gridImg1,gridImg2,gridImg3,gridImg4,gridImg5,gridImg6,gridImg7,gridImg8,gridImg9]
-
-
-        
-        
-        #generate random number between 20 and 99 for the answer to equal
-        answer = random.randint(20, 99)
-        #global debugText
-        debugText = 'Arrange blocks so that addition equals ' + str(answer)
-        #debugText = answerStr
-        #see if there is a sprite font
-        
-        if pygame.font:
-            spriteBatch.add(Text(debugText,253,174))
             
-        #main blocku code structs
-        blocks = pygame.sprite.Group()
-        Block.containers = blocks,spriteBatch
         #blocks are Block(n,s,e,w,x,y) xy= starting position
         #
         #
@@ -396,12 +373,18 @@ class Game:
         # Uncomment lines with an asterisk to make the game generate a random board again
         # Lines with a double pound are used to load a board
         allBlocks = GenerateAddition(4, answer) #*
+        cursor = mouseUpdate(mouse.get_pos())
+        pygame.display.update(cursor)
+
+        #actually displays everything
+        allsprites = pygame.sprite.RenderPlain((cursor, allBlocks, objective, solved, unsolved))
+        
         #allBlocks = LoadBoard() ##
         gridpos = GenerateGrid(allBlocks)
         answerStr = LastLine()  ##
         #answerStr = 'Arrange blocks so that addition equals ' + str(answer) #*
         #print(answerStr)
-        #Randomize(allBlocks)
+        Randomize(allBlocks)
         #print(allBlocks)
 
         # Default grid positions - handled now by GenerateGrid()
@@ -411,16 +394,17 @@ class Game:
         for i in range(len(gridpos)):
             background.blit(gridImg1, gridpos[i])
 
-
+        #for i in range(len(allBlocks)):
+        #    allBlocks[i].update()
+        #    background.blit(allBlocks[i].image,[allBlocks[i].rect.x,allBlocks[i].rect.y])
         
         #get the image and screen in the same format
-        if background.get_bitsize() == 8:
+        """if background.get_bitsize() == 8:
             set_palette(background.get_palette())
         else:
-            background.convert()
+            background.convert()"""
 
         screen.blit(background,(0,0))
-
         pygame.display.flip()
 
         #to set the icon up and to decorate the game window
@@ -445,15 +429,14 @@ class Game:
         # pygame has a collision detector under pygame.sprite.spritecollide(group,group,dokill)
         # this will return a list of colliders, dokill will remove the colliders from the parrent group if true
         mousePossible = True
-        while self.running:
+        while 1:
             loopCounter += 1
             if loopCounter > 50:
-                try:
-                    txt2.change('')
-                except:
-                    pass
-                loopCounter=0
-            pygame.display.flip()
+                loopCounter = 0
+                unsolved.change('')
+                
+            #pygame.display.update(allBlocks)
+            #pygame.display.flip()
             keyDown = False
             # Pump GTK messages.
             while gtk and gtk.events_pending():
@@ -472,22 +455,14 @@ class Game:
                     mousePossible = True
                     if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                             result = Solve(allBlocks)
-                            if pygame.font:
-                                if result=='Solved!':
-                                    txt = Text('You Win!',400,240,'red',142)
-                                    spriteBatch.add(txt)
-                                    try:
-                                        txt2.change('')
-                                    except:
-                                        pass
-                                else:
-                                    loopCounter = 0
-                                    try:
-                                        txt.change('')
-                                    except:
-                                        pass
-                                    txt2 = Text('Incomplete',400,240,'red',142)
-                                    spriteBatch.add(txt2)
+                            if result == 'Solved!':
+                                #spriteBatch.add(solved)
+                                solved.change('You Win!')
+                                unsolved.change('')
+                            else:
+                                loopCounter = 0
+                                unsolved.change('Incomplete')
+                                #spriteBatch.add(unsolved)
                                 
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
@@ -499,22 +474,14 @@ class Game:
                         event.set_grab(0)
                         if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                             result = Solve(allBlocks)
-                            if pygame.font:
-                                if result=='Solved!':
-                                    txt = Text('You Win!',400,240,'red',142)
-                                    spriteBatch.add(txt)
-                                    try:
-                                        txt2.change('')
-                                    except:
-                                        pass
-                                else:
-                                    loopCounter = 0
-                                    try:
-                                        txt.change('')
-                                    except:
-                                        pass
-                                    txt2 = Text('Incomplete',400,240,'red',142)
-                                    spriteBatch.add(txt2)
+                            if result == 'Solved!':
+                                #spriteBatch.add(solved)
+                                solved.change('You Win!')
+                                unsolved.change('')
+                            else:
+                                loopCounter = 0
+                                unsolved.change('Incomplete')
+                                #spriteBatch.add(unsolved)
                         
             # get the state of the keyboard for input
             
@@ -525,10 +492,7 @@ class Game:
             #if keystate[K_b]:
                # pygame.mixer.music.play()
             # for key test use keystate[key] and a return of true will occur when key down
-            # clear/erase the last drawn sprites
-            spriteBatch.clear(screen, background)
-            # update all the sprites
-            spriteBatch.update()
+            
 
             #for block in blocks:
             x = cursor.rect.x
@@ -591,11 +555,11 @@ class Game:
 
             # note random here is random.random()
             # note foreach here is for object in
-
-            # draw call for the screen
-            draw = spriteBatch.draw(screen)
-            pygame.display.update(draw)
-
+            
+            allsprites.update()
+            screen.blit(background, (0,0))
+            allsprites.draw(screen)
+            pygame.display.flip()
 
             # Try to stay at 30 FPS
             self.clock.tick(30)
@@ -619,25 +583,31 @@ class Text(pygame.sprite.Sprite):
         self.update()
 
 class mouseUpdate(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, pos):
+        x,y = pos
         pygame.sprite.Sprite.__init__(self)
         thisImg = load_image('mouse.png')
-        over = pygame.sprite.LayeredUpdates(*[self])
+        #over = pygame.sprite.LayeredUpdates(*[self])
 
-        over.move_to_front(self)
+        #over.move_to_front(self)
         self.image = thisImg
-        self.update()
-        self.rect = self.image.get_rect().move(50, 220)
+        #self.update()
+        #self.rect = self.image.get_rect().move(50, 220)
+        self.rect = pygame.Rect(x,y,28,32)
 
     def update(self):
-        self.image = load_image('mouse.png')
+        self.rect = self.rect.clamp(SCREENRECT)
+        over = pygame.sprite.LayeredUpdates(*[self])
+        over.move_to_front(self)
 
-    def grab(self, pos):
+    """def grab(self, pos):
         x, y = pos;
         globX=x
         globY=y
-        self.rect.left = x-14
-        self.rect.top = y-16
+        newpos = self.rect.move((x,y))
+        self.rect = newpos
+        #self.rect.left = x-14
+        #self.rect.top = y-16"""
 
     def mouseMoved(self,mouse):
         self.rect.x, self.rect.y = mouse
@@ -659,6 +629,7 @@ class MainMenu():
     instBool = False
     def __init__(self):
         self.paused = False
+        self.clock = pygame.time.Clock()
 
         #set the screen up
         winstyle = 0  # |FULLSCREEN
@@ -668,22 +639,17 @@ class MainMenu():
 
         pygame.display.set_caption('Blocku')
         self.menuImg = load_image('bg.png')
-        self.background = load_image('background.png')
+        #self.background = load_image('background.png')
         self.instImg = load_image('instructions.png')
 
         self.screen = pygame.display.set_mode((1200,900))
         #self.screen.blit(self.menuImg,(0,0))
         #get the image and screen in the same format
-        if self.background.get_bitsize() == 8:
-            set_palette(self.background.get_palette())
-        else:
-            self.background.convert()
 
         screen.blit(self.menuImg, (0,0))
         
         self.addText()
         pygame.display.flip()
-
         self.loop()
 
     def truncline(self, text, font, maxwidth):
@@ -725,6 +691,7 @@ class MainMenu():
         return list(lines)
 
     def addText(self):
+        
         if pygame.font:
             font = pygame.font.Font(None, 50)
 
@@ -763,43 +730,86 @@ class MainMenu():
                 self.screen.blit(instructs,[520,520])
 
     def loop(self):
+        pygame.mouse.set_visible(False)
+        cursor = mouseUpdate(mouse.get_pos())
+        allsprites = pygame.sprite.RenderPlain((cursor))
+        
+        mousePossible = True
+        
+        while 1:
+            hit = False
+            keystate = pygame.key.get_pressed()
+            #keyboard and gameboy buttons
+            if keystate[K_LEFT] or keystate[K_KP4]:
+                cursor.move(3)
+                mousePossible = False
+            if keystate[K_RIGHT] or keystate[K_KP6]:
+                cursor.move(1)
+                mousePossible= False
+            if keystate[K_UP] or keystate[K_KP8]:
+                cursor.move(0)
+                mousePossible = False
+            if keystate[K_DOWN] or keystate[K_KP2]:
+                cursor.move(2)
+                mousePossible = False
+            if keystate[K_SPACE] or keystate[K_KP3]:
+                hit = True
                 
-        exit = False
-        while not exit:
+            #cursor.grab(mouse.get_pos())
+            if mousePossible == True:
+                cursor.mouseMoved(mouse.get_pos())
+
+                
             for event in pygame.event.get():
+                if event.type == QUIT or \
+                    (event.type == KEYDOWN and event.key == K_ESCAPE):
+                        return
                 if event.type == MOUSEBUTTONDOWN:
                     if event.button == 1:
+                        mousePossible = True
+                        hit = True
 
-                        #new game button is at (382,269) and is 311,122 pixels
-                        #insturctions button is at (382, 392) and is 311,122 pixels
-                        #game mode is at (382, 510) and is 311,122 pixels
-                        #exit is at (382,625) and is 311,122 pixels
-                        #new game. launches into a new game of blocku, with current default behavior of creating a new random grid
-                        if event.pos[0] > 466 and event.pos[0] < 777 and event.pos[1] > 329 and event.pos[1] < 451 and self.instBool == False:
-                            pygame.display.flip()
-                            game = Game()
-                            game.run()
-                            pygame.quit()
+                if hit:
+                    #new game button is at (382,269) and is 311,122 pixels
+                    #insturctions button is at (382, 392) and is 311,122 pixels
+                    #game mode is at (382, 510) and is 311,122 pixels
+                    #exit is at (382,625) and is 311,122 pixels
+                    #new game. launches into a new game of blocku, with current default behavior of creating a new random grid
+                    if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 329 and cursor.rect.y < 451 and self.instBool == False:
+                        pygame.display.flip()
+                        game = Game()
+                        game.run()
+                        pygame.quit()
                             
-                        #insturctions
-                        if event.pos[0] > 466 and event.pos[0] < 777 and event.pos[1] > 478 and event.pos[1] < 600 and self.instBool == False:
-                            #pygame.display.flip()
-                            self.instBool = True
-                            self.screen.blit(self.instImg, (328,294))
-                            self.addText()
-                            pygame.display.flip()
+                    #insturctions
+                    if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 478 and cursor.rect.y < 600 and self.instBool == False:
+                        #pygame.display.flip()
+                        self.instBool = True
+                        self.menuImg.blit(self.instImg, (328,294))
+                        self.addText()
+                        pygame.display.flip()
                         
-                        #close insturctions button
-                        if event.pos[0] > 798 and event.pos[0] < 865 and event.pos[1] > 573 and event.pos[1] < 599 and self.instBool == True:
-                            self.screen.blit(self.menuImg, (0,0))
-                            self.instBool = False
-                            self.addText()
-                            pygame.display.flip()
+                    #close insturctions button
+                    if cursor.rect.x > 798 and cursor.rect.x < 865 and cursor.rect.y > 573 and cursor.rect.y < 599 and self.instBool == True:
+                        self.menuImg = load_image('bg.png')
+                        self.screen.blit(self.menuImg, (0,0))
+                        self.instBool = False
+                        self.addText()
+                        pygame.display.flip()
                             
 
-                        #exit button. exits the game
-                        if event.pos[0] > 466 and event.pos[0] < 777 and event.pos[1] > 765 and event.pos[1] < 887 and self.instBool == False:
-                            pygame.quit()
+                    #exit button. exits the game
+                    if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 765 and cursor.rect.y < 887 and self.instBool == False:
+                        pygame.quit()
+                            
+            
+            #cursor.mouseMoved(mouse.get_pos())
+                
+            self.screen.blit(self.menuImg, (0,0))
+            self.addText()
+            allsprites.draw(self.screen)
+            pygame.display.flip()
+            self.clock.tick(30)
 
 
 
