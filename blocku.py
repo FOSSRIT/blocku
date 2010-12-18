@@ -517,6 +517,7 @@ class Game:
                             result = Solve(allBlocks)
                             if result == 'Solved!':
                                 solved.change('You Win!')
+                                completed = True
                                 unsolved.change('')
                             else:
                                 loopCounter = 0
