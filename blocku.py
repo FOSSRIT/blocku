@@ -559,7 +559,7 @@ class Game:
             
             for block in allBlocks:
                 #Block rotation when pressing enter
-                if block.isLast == 1 and (keystate[K_RETURN] or keystate[K_KP1]) and not keyDown:
+                if block.isLast == 1 and (keystate[K_RETURN] or keystate[K_KP1]) and not keyDown and not (dif == 1 or dif == 2):
                     block.rotate()
                     keyDown = True
                 isLast = block
