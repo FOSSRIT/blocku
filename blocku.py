@@ -106,7 +106,75 @@ def GenerateAddition(num, answer):
         
     #print(count)
 
-    return blocks        
+    return blocks
+
+
+# num - number of blocks on one side of grid (ex: pass in 3 for a 3x3 grid)
+def GenerateSubtraction(num, answer):
+    rows = list([] for i in range(num))
+    blocks = list([] for i in range(num * num))
+    for i in range(num):
+        rows[i] = list([] for i in range(num))
+
+    # x and y positions of starting point of grid
+    x = 398
+    y = 298
+    # answer to solve for
+
+    # populate the list with blocks
+    #blocks are Block(n,s,e,w,x,y) xy= starting position
+    for i in range(num):
+        for k in range(num):
+            temp = Block(-1, -1, -1, -1, (x + (i * 108)+100), (y + (k * 108)+50))
+            rows[i][k] = temp
+            #blocks[(i * 3) + k] = temp
+
+    # Left and right answers
+    for i in range(num):
+        for k in range(num):
+            # set the block's right side answer
+            rows[i][k].origEast = rows[i][k].east = random.randint(0, answer)
+            # generate a random num for the block's west answer
+            if rows[i][k].west == -1:
+                rows[i][k].origWest = rows[i][k].west = random.randint(0, answer + 10)
+            # check the left side answer of the block in the adjacent row
+            if (i + 1) < num:
+                rows[i + 1][k].origWest = rows[i + 1][k].west = (answer + rows[i][k].east)
+                 #rows[i + 1][k].west
+    #print(rows[3][2])
+
+    # Top and bottom answers
+    for i in range(num):
+        for k in range(num):
+            # set top answer if empty
+            if (rows[i][k].north == -1):
+                rows[i][k].origNorth = rows[i][k].north = random.randint(0, answer + 10)
+                 #rows[i][k].north
+            # get random number for south
+            rows[i][k].origSouth = rows[i][k].south = random.randint(0, answer)
+            # get answer in block below the block we just filled in
+            if (k + 1) < num:
+                rows[i][k].origNorth = rows[i][k + 1].north = (answer + rows[i][k].south)
+
+    # get all the blocks into a single list
+    count = 0
+    #print(count)
+    for i in range(num):
+        for k in range(num):
+            blocks[count] = rows[i][k]
+            count += 1
+            
+    # make sure all the original positions are saved
+    for block in blocks:
+        block.origNorth = block.north
+        block.origSouth = block.south
+        block.origEast = block.east
+        block.origWest = block.west
+        
+        
+    #print(count)
+
+    return blocks
 
 def Solve(blocks):
     for block in blocks:
@@ -207,6 +275,7 @@ class Block(pygame.sprite.Sprite):
     globY=1
     origX = 0
     origY = 0
+    rangeRender = 0
     
     def __init__(self, n='', e='', s='', w='', x='', y=''):
         pygame.sprite.Sprite.__init__(self)
@@ -247,7 +316,7 @@ class Block(pygame.sprite.Sprite):
         self.image = self.blankImage.copy()
         #self.image = self.images[0].copy()
         self.image.blit(self.font.render(str(self.north), 0, self.color),(39,3))
-        self.image.blit(self.font.render(str(self.east), 0, self.color),(65,42))
+        self.image.blit(self.font.render(str(self.east), 0, self.color),(self.rangeRender,42))
         self.image.blit(self.font.render(str(self.south), 0, self.color),(39,75))
         self.image.blit(self.font.render(str(self.west), 0, self.color),(5,42))
         
@@ -277,7 +346,6 @@ class Block(pygame.sprite.Sprite):
 
 #the main game class
 class Game:
-    
     def __init__(self):
         # Set up a clock for managing the frame rate.
         self.clock = pygame.time.Clock()
@@ -295,13 +363,13 @@ class Game:
         pass
 
     # The main game loop.
-    def run(self, curMode, rng, dif):
+    def run(self, curMode, rng, dif, sub):
         pygame.mouse.set_visible(False)
         isRan = 0
 
-        print curMode
-        print rng
-        print dif
+        #print curMode
+        #self.rangee = rng
+        #print dif
 
         #pseudo timer
         loopCounter = 0
@@ -328,15 +396,20 @@ class Game:
         #generate random number between 20 and 99 for the answer to equal
         if rng == 1:
             answer = random.randint(15, 40)
+            Block.rangeRender = 65
         elif rng == 2:
             answer = random.randint(30, 99)
+            Block.rangeRender = 65
         elif rng == 3:
             answer = random.randint(100, 999)
+            Block.rangeRender = 57
 
         if pygame.font:
-            objective = Text('Arrange blocks so that addition equals ' + str(answer),253,174) #Objective text
+            if sub == 0:
+                objective = Text('Arrange blocks so that addition equals ' + str(answer),253,174) #Objective text
+            else:
+                objective = Text('Arrange blocks so that subtraction equals ' + str(answer),253,174) #Objective text
             solved = Text('',400,240,'red',142)  #Text for when solved
-            unsolved = Text('',400,240,'red',142)  #text for when unsolved
             timeText = Text('',375,25,'black',89) #text to display time elapsed
             
             font = pygame.font.Font(None, 42)
@@ -367,6 +440,7 @@ class Game:
         tempImages = [load_image('c1.png'),load_image('c2.png'),load_image('c3.png'),load_image('c4.png'),load_image('c5.png'),load_image('c6.png'),load_image('c7.png'),load_image('c8.png'),load_image('c9.png')]
         Block.images = tempImages
         Block.permImages = tempImages
+        
         gridImg1 = squares
             
         #blocks are Block(n,s,e,w,x,y) xy= starting position
@@ -380,20 +454,36 @@ class Game:
         #
         # Uncomment lines with an asterisk to make the game generate a random board again
         # Lines with a double pound are used to load a board
-        if dif == 1:
-            allBlocks = GenerateAddition(3, answer)
-        elif dif == 2:
-            allBlocks = GenerateAddition(4, answer)
-        elif dif == 3:
-            allBlocks = GenerateAddition(3, answer)
-            for block in allBlocks:
-                for i in range(0, random.randint(1, 6)):
-                    block.rotate()
-        elif dif == 4:
-            allBlocks = GenerateAddition(4, answer)
-            for block in allBlocks:
-                for i in range(0, random.randint(1, 6)):
-                    block.rotate()
+        if sub == 0:
+            if dif == 1:
+                allBlocks = GenerateAddition(3, answer)
+            elif dif == 2:
+                allBlocks = GenerateAddition(4, answer)
+            elif dif == 3:
+                allBlocks = GenerateAddition(3, answer)
+                for block in allBlocks:
+                    for i in range(0, random.randint(1, 6)):
+                        block.rotate()
+            elif dif == 4:
+                allBlocks = GenerateAddition(4, answer)
+                for block in allBlocks:
+                    for i in range(0, random.randint(1, 6)):
+                        block.rotate()
+        else:
+            if dif == 1:
+                allBlocks = GenerateSubtraction(3, answer)
+            elif dif == 2:
+                allBlocks = GenerateSubtraction(4, answer)
+            elif dif == 3:
+                allBlocks = GenerateSubtraction(3, answer)
+                for block in allBlocks:
+                    for i in range(0, random.randint(1, 6)):
+                        block.rotate()
+            elif dif == 4:
+                allBlocks = GenerateSubtraction(4, answer)
+                for block in allBlocks:
+                    for i in range(0, random.randint(1, 6)):
+                        block.rotate()
 
         gridpos = GenerateGrid(allBlocks)
         Randomize(allBlocks)
@@ -401,7 +491,7 @@ class Game:
         pygame.display.update(cursor)
 
         #actually displays everything
-        allsprites = pygame.sprite.RenderPlain((cursor, allBlocks, objective, solved, unsolved, timeText))
+        allsprites = pygame.sprite.RenderPlain((cursor, allBlocks, objective, solved, timeText))
         
         #allBlocks = LoadBoard() ##
         
@@ -473,7 +563,8 @@ class Game:
             
             if loopCounter > 50:
                 loopCounter = 0
-                unsolved.change('')
+                if not completed:
+                    solved.change('')
                 
             #pygame.display.update(allBlocks)
             #pygame.display.flip()
@@ -496,14 +587,11 @@ class Game:
                     if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                             result = Solve(allBlocks)
                             if result == 'Solved!':
-                                #spriteBatch.add(solved)
                                 solved.change('You Win!')
                                 completed = True
-                                unsolved.change('')
                             else:
                                 loopCounter = 0
-                                unsolved.change('Incomplete')
-                                #spriteBatch.add(unsolved)
+                                solved.change('Incomplete')
                                 
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
@@ -518,10 +606,9 @@ class Game:
                             if result == 'Solved!':
                                 solved.change('You Win!')
                                 completed = True
-                                unsolved.change('')
                             else:
                                 loopCounter = 0
-                                unsolved.change('Incomplete')
+                                solved.change('Incomplete')
                         
             # get the state of the keyboard for input
             
@@ -661,6 +748,7 @@ class MainMenu():
     curSel = 1
     selRange = 1
     selDiff = 1
+    selSubtraction = 0
     def __init__(self):
         self.paused = False
         self.clock = pygame.time.Clock()
@@ -676,6 +764,7 @@ class MainMenu():
         #self.background = load_image('background.png')
         self.instImg = load_image('instructions.png').convert()
         self.menuWI = load_image('menuWithInst.png').convert()
+        self.subAdd = load_image('subAdd.png').convert()
         self.gModes = load_image('modesMain.png').convert()
         self.hi = load_image('hilite.png').convert()
         self.leftArrow = load_image('left.png').convert()
@@ -684,6 +773,7 @@ class MainMenu():
         if pygame.font:
             self.selRng = Text('',575,350,'black',42)
             self.selDifficulty = Text('',575,550,'black',42)
+            self.selSub = Text('',575,105,'black',42)
 
         self.screen = pygame.display.set_mode((1200,900))
         #self.screen.blit(self.menuImg,(0,0))
@@ -818,10 +908,16 @@ class MainMenu():
             else:
                 self.selDiff = 1
 
+    def subChange(self):
+        if self.selSubtraction == 0:
+            self.selSubtraction = 1
+        else:
+            self.selSubtraction = 0
+
     def loop(self):
         pygame.mouse.set_visible(False)
         cursor = mouseUpdate(mouse.get_pos())
-        allsprites = pygame.sprite.RenderPlain((cursor, self.selRng, self.selDifficulty))
+        allsprites = pygame.sprite.RenderPlain((cursor, self.selRng, self.selDifficulty, self.selSub))
         
         mousePossible = True
         
@@ -868,7 +964,7 @@ class MainMenu():
                     if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 329 and cursor.rect.y < 451 and self.instBool == False and self.modeBool == False:
                         pygame.display.flip()
                         game = Game()
-                        game.run(self.curSel, self.selRange, self.selDiff)
+                        game.run(self.curSel, self.selRange, self.selDiff, self.selSubtraction)
                         pygame.quit()
                             
                     #insturctions
@@ -926,6 +1022,12 @@ class MainMenu():
 
                         #if time attack is selected
                         if self.curSel == 1:
+
+                            
+                            self.menuImg.blit(self.subAdd, (511,72))
+                            self.menuImg.blit(self.leftArrow, (529,100))
+                            self.menuImg.blit(self.rightArrow, (909,100))
+                            
                             numRange = pygame.font.Font(None,42).render("Select Number Range",1,(0,0,0))
                             self.menuImg.blit(numRange,(526,298))
 
@@ -953,11 +1055,22 @@ class MainMenu():
                             if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 543 and cursor.rect.y < 585:
                                 self.diffChange(2)
 
+                            #select addition or subtraction right
+                            if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 100 and cursor.rect.y < 142:
+                                self.subChange()
+
+                            #select addition or subtraction left
+                            if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 100 and cursor.rect.y < 142:
+                                self.subChange()
+
                             #all are 25 by 42
                             #range left       529 341
                             #range right      909 341
                             #diff left        529 543
                             #diff right       909 543
+
+                            #sub left         529 100
+                            #sub right        909 100
 
 
                         #close gModes KEEP THIS LAST
@@ -974,6 +1087,10 @@ class MainMenu():
 
 
                 #display defaults
+                if self.selSubtraction == 0:
+                    self.selSub.change('Addition')
+                else:
+                    self.selSub.change('Subtraction')
                 if self.modeBool == True and self.curSel == 1:        
                     if self.selRange == 1:
                         self.selRng.change('Low')
@@ -993,6 +1110,7 @@ class MainMenu():
                 else:
                     self.selRng.change('')
                     self.selDifficulty.change('')
+                    self.selSub.change('')
                             
             
             #cursor.mouseMoved(mouse.get_pos())
