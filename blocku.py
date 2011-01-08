@@ -373,6 +373,9 @@ class Game:
 
         #pseudo timer
         loopCounter = 0
+
+        #puzzle counter
+        numRotateTotal = 0
         
         if pygame.mixer and not pygame.mixer.get_init():
             print('Warning, no sound')
@@ -486,7 +489,14 @@ class Game:
                         block.rotate()
 
         gridpos = GenerateGrid(allBlocks)
-        Randomize(allBlocks)
+        if curMode == 1:
+            Randomize(allBlocks)
+        elif curMode == 2:
+            for block in allBlocks:
+                for i in range(0, random.randint(1, 6)):
+                    block.rotate()
+                    numRotateTotal += 1
+            print numRotateTotal
         cursor = mouseUpdate(mouse.get_pos())
         pygame.display.update(cursor)
 
@@ -529,7 +539,7 @@ class Game:
         
         
         #if a key is down
-        global keyDown
+        #global keyDown
             
             #spriteBatch.add(mainText())
         
@@ -546,20 +556,23 @@ class Game:
         completed = False
         timer = 0
         counter = 0
+        keyDown = False
         mins = 0
+        numRotate = 0
         while 1:
             loopCounter += 1
-            if not completed:
-                counter += 1
-                if counter > 30:
-                    timer += 1
-                    counter = 0
-                if timer > 59:
-                    mins += 1
-                    timer = 0
-
-            
-            timeText.change('Time Elapsed ' + str(mins) + ':' + str(timer))
+            if curMode == 1:
+                if not completed:
+                    counter += 1
+                    if counter > 30:
+                        timer += 1
+                        counter = 0
+                    if timer > 59:
+                        mins += 1
+                        timer = 0
+                timeText.change('Time Elapsed ' + str(mins) + ':' + str(timer))
+            elif curMode == 2:
+                timeText.change('Number of Rotations: ' + str(numRotate))
             
             if loopCounter > 50:
                 loopCounter = 0
@@ -568,7 +581,6 @@ class Game:
                 
             #pygame.display.update(allBlocks)
             #pygame.display.flip()
-            keyDown = False
             # Pump GTK messages.
             while gtk and gtk.events_pending():
                 gtk.main_iteration()
@@ -609,13 +621,7 @@ class Game:
                             else:
                                 loopCounter = 0
                                 solved.change('Incomplete')
-                        
-            # get the state of the keyboard for input
             
-            if not keystate[K_RETURN] or keystate[K_KP1]:
-                keyDown = False
-            # Checks to see if the puzzle is solved
-
             #if keystate[K_b]:
                # pygame.mixer.music.play()
             # for key test use keystate[key] and a return of true will occur when key down
@@ -644,12 +650,17 @@ class Game:
             if mousePossible == True:
                 cursor.mouseMoved(mouse.get_pos())
             
+            if not keystate[K_RETURN] or keystate[K_KP1]:
+                keyDown = False
+            
             for block in allBlocks:
                 #Block rotation when pressing enter
-                if block.isLast == 1 and (keystate[K_RETURN] or keystate[K_KP1]) and not keyDown and not (dif == 1 or dif == 2):
-                    block.rotate()
-                    keyDown = True
-                isLast = block
+                if (curMode == 1 and not (dif == 1 or dif == 2)) or curMode == 2:
+                    if block.isLast == 1 and (keystate[K_RETURN] or keystate[K_KP1]) and not keyDown:
+                        block.rotate()
+                        numRotate += 1
+                        keyDown = True
+                    isLast = block
 
                 #For block dragging
                 if event.get_grab():
@@ -662,18 +673,19 @@ class Game:
                                 anotherBlock = 1
                                 break
                         if anotherBlock == 0:
-                            block.grab([cursor.rect.x, cursor.rect.y])
+                            if curMode == 1:
+                                block.grab([cursor.rect.x, cursor.rect.y])
                             block.setGrabbed(True)
                             for tempblock in allBlocks:
                                 tempblock.isLast = 0
                             block.isLast = 1
                             isRan = 1
                             break
-                    elif block.isMoving == True:
+                    elif block.isMoving == True and curMode == 1:
                         block.grab([cursor.rect.x, cursor.rect.y])
                 elif isRan == 1 and block.isLast == 1:
                     for piece in gridpos:
-                        if cursor.rect.x > piece[0] and cursor.rect.x< piece[0]+108 and cursor.rect.y > piece[1] and cursor.rect.y < piece[1]+108 and block.isMoving == True:
+                        if cursor.rect.x > piece[0] and cursor.rect.x< piece[0]+108 and cursor.rect.y > piece[1] and cursor.rect.y < piece[1]+108 and block.isMoving == True and curMode == 1:
                             place = piece[0] + 54, piece[1] + 54
                             isLast.grab(place)
                             isRan = 0
@@ -897,14 +909,20 @@ class MainMenu():
                 self.selRange = 1
 
     def diffChange(self, change):
-        if change == 1:
-            if not self.selDiff == 1:
-                self.selDiff -= 1
-            else:
-                self.selDiff = 4
-        elif change == 2:
-            if not self.selDiff == 4:
-                self.selDiff += 1
+        if self.curSel == 1:
+            if change == 1:
+                if not self.selDiff == 1:
+                    self.selDiff -= 1
+                else:
+                    self.selDiff = 4
+            elif change == 2:
+                if not self.selDiff == 4:
+                    self.selDiff += 1
+                else:
+                    self.selDiff = 1
+        elif self.curSel == 2:
+            if self.selDiff == 1:
+                self.selDiff = 2
             else:
                 self.selDiff = 1
 
@@ -1010,6 +1028,7 @@ class MainMenu():
                         if cursor.rect.x > 109 and cursor.rect.x < 435 and cursor.rect.y > 366 and cursor.rect.y < 540:
                             self.curSel = 2
                             self.menuImg.blit(self.gModes, (101,167))
+                            self.selDiff = 1
                             #which is selected?
                             self.menuImg.blit(self.hi,(126,377))
 
@@ -1020,9 +1039,8 @@ class MainMenu():
                             #which is selected?
                             self.menuImg.blit(self.hi,(126,572))
 
-                        #if time attack is selected
-                        if self.curSel == 1:
-
+                        #if time attack or puzzle mode is selected
+                        if self.curSel == 1 or self.curSel == 2:
                             
                             self.menuImg.blit(self.subAdd, (511,72))
                             self.menuImg.blit(self.leftArrow, (529,100))
@@ -1087,11 +1105,11 @@ class MainMenu():
 
 
                 #display defaults
-                if self.selSubtraction == 0:
+                if self.selSubtraction == 0 and self.modeBool == True and (self.curSel == 1 or self.curSel == 2):
                     self.selSub.change('Addition')
                 else:
                     self.selSub.change('Subtraction')
-                if self.modeBool == True and self.curSel == 1:        
+                if self.modeBool == True and (self.curSel == 1 or self.curSel == 2):        
                     if self.selRange == 1:
                         self.selRng.change('Low')
                     elif self.selRange == 2:
