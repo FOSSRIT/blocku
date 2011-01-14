@@ -44,7 +44,7 @@ def load_image(file):
 def display_box(screen, message, x, y):
 	"Print a message in a box in the middle of the screen"
 	font = pygame.font.Font(None, 42)
-	rect = pygame.Rect([x, y, 300, 42])
+	rect = pygame.Rect([x, y, 300, 30])
 
 	#center = screen.get_rect().center
 	#rect.center = center
@@ -55,32 +55,6 @@ def display_box(screen, message, x, y):
 	screen.blit(font.render(message, 1, (0,0,0)), rect.topleft)
 	
 	pygame.display.flip()
-
-def ask(screen, question, x, y):
-	"ask(screen, question) -> answer"
-	pygame.font.init()  
-	text = ""
-	display_box(screen, question + ": " + text, int(x), int(y))
-
-	while True:
-		pygame.time.wait(50)
-		event = pygame.event.poll()
-		
-		if event.type == QUIT:
-			sys.exit()	 
-		if event.type != KEYDOWN:
-		  continue
-		  
-		if event.key == K_BACKSPACE:
-			text = text[0:-1]
-		elif event.key == K_RETURN:
-			break
-		else:
-			text += event.unicode.encode("ascii")
-			
-		display_box(screen, question + ": " + text, int(x), int(y))
-	print text
-	return text
 
 # num - number of blocks on one side of grid (ex: pass in 3 for a 3x3 grid)
 def GenerateAddition(num, answer):
@@ -235,7 +209,7 @@ def Randomize(blocks):
         block.rect.y = random.randint(200, 700)
 
 # read in a board called testFile.txt
-def LoadBoard():
+def LoadBoard(nm):
     # File format:
     # ---------------
     # Number of blocks in board
@@ -245,7 +219,7 @@ def LoadBoard():
     
     # For now, we'll ignore the block height and color
     try:
-        file = open("boards\\testFile.txt", "r")
+        file = open("boards\\" + nm + ".txt", "r")
         numLines = file.readline()
         #print(numLines)
         blocks = list([] for i in range(int(numLines)))
@@ -258,7 +232,7 @@ def LoadBoard():
 
         file.close()
     except:
-        blocks = blocks[0] = Block(1, 2, 3, 4, int(5), int(6))
+        return "Can't load board"
     
     return blocks
 
@@ -404,7 +378,7 @@ class Game:
         pass
 
     # The main game loop.
-    def run(self, curMode, rng, dif, sub):
+    def run(self, curMode, rng, dif, sub, name):
         pygame.mouse.set_visible(False)
         isRan = 0
 
@@ -530,7 +504,7 @@ class Game:
                         for i in range(0, random.randint(1, 6)):
                             block.rotate()
         else:
-            allBlocks = LoadBoard()
+            allBlocks = LoadBoard(name)
             
         gridpos = GenerateGrid(allBlocks)
         if curMode == 1:
@@ -804,9 +778,9 @@ class MainMenu():
     curSel = 1
     selRange = 1
     selDiff = 1
-    selSubtraction = 0
-    #pygame.font.init()  
+    selSubtraction = 0  
     text = ""
+    goodLoad = False
     def __init__(self):
         self.paused = False
         self.clock = pygame.time.Clock()
@@ -1028,7 +1002,7 @@ class MainMenu():
                     if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 329 and cursor.rect.y < 451 and self.instBool == False and self.modeBool == False:
                         pygame.display.flip()
                         game = Game()
-                        game.run(self.curSel, self.selRange, self.selDiff, self.selSubtraction)
+                        game.run(self.curSel, self.selRange, self.selDiff, self.selSubtraction, self.text)
                         pygame.quit()
                             
                     #insturctions
@@ -1051,10 +1025,11 @@ class MainMenu():
                     if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 623 and cursor.rect.y < 745 and self.instBool == False and self.modeBool == False:
                         self.menuImg.blit(self.gModes, (101,167))
                         self.modeBool = True
+                        self.goodLoad = False
                         self.addText()
                         pygame.display.flip()
 
-                    if self.modeBool == True:
+                    if self.modeBool == True and not self.goodLoad:
                         #which is selected?
                         if self.curSel == 1:
                             self.menuImg.blit(self.hi,(126,198))
@@ -1139,11 +1114,12 @@ class MainMenu():
 
                         #click on story mode
                         if self.curSel == 3:
-
                             
-
                             difficulty = pygame.font.Font(None,42).render("Select Difficulty",1,(0,0,0))
                             self.menuImg.blit(difficulty,(526,498))
+
+                            boardEnter = pygame.font.Font(None,42).render("Enter the name of board",1,(0,0,0))
+                            self.menuImg.blit(boardEnter,(526,350))
 
                             self.menuImg.blit(self.leftArrow,(529,543))
                             self.menuImg.blit(self.rightArrow,(909,543))
@@ -1159,6 +1135,13 @@ class MainMenu():
 
                         #close gModes KEEP THIS LAST
                         if cursor.rect.x > 980 and cursor.rect.x < 1094 and cursor.rect.y > 684 and cursor.rect.y < 728:
+                            if self.curSel == 3:
+                                if not os.path.isfile("boards\\" + self.text + ".txt"):
+                                    self.goodLoad = False
+                                    self.text = "File does not exist"
+                                    continue
+                                else:
+                                    self.goodLoad = True
                             self.menuImg = load_image('bg.png')
                             self.screen.blit(self.menuImg, (0,0))
                             self.modeBool = False
@@ -1169,22 +1152,15 @@ class MainMenu():
                     if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 765 and cursor.rect.y < 887 and self.instBool == False and self.modeBool == False:
                         pygame.quit()
 
-                if self.curSel == 3:
-                    
-                    if event.type == QUIT:
-                        sys.exit()
-                                
-                            #if event.type != KEYDOWN:
-                            #    continue
-		  
+                #textbox
+                if self.curSel == 3 and self.modeBool == True:
                     if event.type == KEYDOWN and event.key == K_BACKSPACE:
                         self.text = self.text[0:-1]
                     elif event.type == KEYDOWN and event.key == K_RETURN:
                         print self.text
                     elif event.type == KEYDOWN:
                         self.text += event.unicode.encode("ascii")
-                    display_box(self.menuImg,'' + self.text, 529,400)
-
+                    display_box(self.menuImg,'' + self.text, 529,380)
 
                 #display defaults
                 if self.selSubtraction == 0 and self.modeBool == True and (self.curSel == 1 or self.curSel == 2):
