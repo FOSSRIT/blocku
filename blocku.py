@@ -1,4 +1,4 @@
-
+#http://stackoverflow.com/questions/3696114/when-blitting-a-sprite-with-colorkey-transparency-in-pygame-the-areas-that-shoul
 """Main Blocku game logic class
 
 import every thing that the activity needs and run game code
@@ -7,7 +7,7 @@ Authored by Fran Rogers and Ariel Zamparini
 """
 
 #!/usr/bin/python
-import pygame, random, os.path, os
+import pygame, random, os.path, os, sys
 
 from pygame.locals import *
 from pygame import *
@@ -40,6 +40,47 @@ def load_image(file):
     for file in files:
         imgs.append(load_image(file))
     return imgs"""
+
+def display_box(screen, message, x, y):
+	"Print a message in a box in the middle of the screen"
+	font = pygame.font.Font(None, 42)
+	rect = pygame.Rect([x, y, 300, 42])
+
+	#center = screen.get_rect().center
+	#rect.center = center
+
+	pygame.draw.rect(screen, (255, 255, 255), rect, 0)
+	pygame.draw.rect(screen, (0,0,0), rect, 1)
+
+	screen.blit(font.render(message, 1, (0,0,0)), rect.topleft)
+	
+	pygame.display.flip()
+
+def ask(screen, question, x, y):
+	"ask(screen, question) -> answer"
+	pygame.font.init()  
+	text = ""
+	display_box(screen, question + ": " + text, int(x), int(y))
+
+	while True:
+		pygame.time.wait(50)
+		event = pygame.event.poll()
+		
+		if event.type == QUIT:
+			sys.exit()	 
+		if event.type != KEYDOWN:
+		  continue
+		  
+		if event.key == K_BACKSPACE:
+			text = text[0:-1]
+		elif event.key == K_RETURN:
+			break
+		else:
+			text += event.unicode.encode("ascii")
+			
+		display_box(screen, question + ": " + text, int(x), int(y))
+	print text
+	return text
 
 # num - number of blocks on one side of grid (ex: pass in 3 for a 3x3 grid)
 def GenerateAddition(num, answer):
@@ -213,7 +254,7 @@ def LoadBoard():
             line = file.readline()
             args = line.rsplit()
             #blocks are Block(n,e,s,w,x,y) xy= starting position
-            blocks[i] = Block(args[3], args[6], args[4], args[5], int(args[0]), int(args[1]))
+            blocks[i] = Block(args[2], args[5], args[3], args[4], int(args[0]), int(args[1]))
 
         file.close()
     except:
@@ -457,37 +498,40 @@ class Game:
         #
         # Uncomment lines with an asterisk to make the game generate a random board again
         # Lines with a double pound are used to load a board
-        if sub == 0:
-            if dif == 1:
-                allBlocks = GenerateAddition(3, answer)
-            elif dif == 2:
-                allBlocks = GenerateAddition(4, answer)
-            elif dif == 3:
-                allBlocks = GenerateAddition(3, answer)
-                for block in allBlocks:
-                    for i in range(0, random.randint(1, 6)):
-                        block.rotate()
-            elif dif == 4:
-                allBlocks = GenerateAddition(4, answer)
-                for block in allBlocks:
-                    for i in range(0, random.randint(1, 6)):
-                        block.rotate()
+        if not curMode == 3: 
+            if sub == 0:
+                if dif == 1:
+                    allBlocks = GenerateAddition(3, answer)
+                elif dif == 2:
+                    allBlocks = GenerateAddition(4, answer)
+                elif dif == 3:
+                    allBlocks = GenerateAddition(3, answer)
+                    for block in allBlocks:
+                        for i in range(0, random.randint(1, 6)):
+                            block.rotate()
+                elif dif == 4:
+                    allBlocks = GenerateAddition(4, answer)
+                    for block in allBlocks:
+                        for i in range(0, random.randint(1, 6)):
+                            block.rotate()
+            else:
+                if dif == 1:
+                    allBlocks = GenerateSubtraction(3, answer)
+                elif dif == 2:
+                    allBlocks = GenerateSubtraction(4, answer)
+                elif dif == 3:
+                    allBlocks = GenerateSubtraction(3, answer)
+                    for block in allBlocks:
+                        for i in range(0, random.randint(1, 6)):
+                            block.rotate()
+                elif dif == 4:
+                    allBlocks = GenerateSubtraction(4, answer)
+                    for block in allBlocks:
+                        for i in range(0, random.randint(1, 6)):
+                            block.rotate()
         else:
-            if dif == 1:
-                allBlocks = GenerateSubtraction(3, answer)
-            elif dif == 2:
-                allBlocks = GenerateSubtraction(4, answer)
-            elif dif == 3:
-                allBlocks = GenerateSubtraction(3, answer)
-                for block in allBlocks:
-                    for i in range(0, random.randint(1, 6)):
-                        block.rotate()
-            elif dif == 4:
-                allBlocks = GenerateSubtraction(4, answer)
-                for block in allBlocks:
-                    for i in range(0, random.randint(1, 6)):
-                        block.rotate()
-
+            allBlocks = LoadBoard()
+            
         gridpos = GenerateGrid(allBlocks)
         if curMode == 1:
             Randomize(allBlocks)
@@ -498,7 +542,7 @@ class Game:
                     numRotateTotal += 1
             print numRotateTotal
         cursor = mouseUpdate(mouse.get_pos())
-        pygame.display.update(cursor)
+        #pygame.display.update(cursor)
 
         #actually displays everything
         allsprites = pygame.sprite.RenderPlain((cursor, allBlocks, objective, solved, timeText))
@@ -655,12 +699,12 @@ class Game:
             
             for block in allBlocks:
                 #Block rotation when pressing enter
-                if (curMode == 1 and not (dif == 1 or dif == 2)) or curMode == 2:
+                if (curMode == 1 and not (dif == 1 or dif == 2)) or curMode == 2 or (curMode == 3 and not dif == 1):
                     if block.isLast == 1 and (keystate[K_RETURN] or keystate[K_KP1]) and not keyDown:
                         block.rotate()
                         numRotate += 1
                         keyDown = True
-                    isLast = block
+                isLast = block
 
                 #For block dragging
                 if event.get_grab():
@@ -673,7 +717,7 @@ class Game:
                                 anotherBlock = 1
                                 break
                         if anotherBlock == 0:
-                            if curMode == 1:
+                            if curMode == 1 or curMode == 3:
                                 block.grab([cursor.rect.x, cursor.rect.y])
                             block.setGrabbed(True)
                             for tempblock in allBlocks:
@@ -681,11 +725,11 @@ class Game:
                             block.isLast = 1
                             isRan = 1
                             break
-                    elif block.isMoving == True and curMode == 1:
+                    elif block.isMoving == True and (curMode == 1 or curMode == 3):
                         block.grab([cursor.rect.x, cursor.rect.y])
                 elif isRan == 1 and block.isLast == 1:
                     for piece in gridpos:
-                        if cursor.rect.x > piece[0] and cursor.rect.x< piece[0]+108 and cursor.rect.y > piece[1] and cursor.rect.y < piece[1]+108 and block.isMoving == True and curMode == 1:
+                        if cursor.rect.x > piece[0] and cursor.rect.x < piece[0]+108 and cursor.rect.y > piece[1] and cursor.rect.y < piece[1]+108 and block.isMoving == True and (curMode == 1 or curMode == 3):
                             place = piece[0] + 54, piece[1] + 54
                             isLast.grab(place)
                             isRan = 0
@@ -761,6 +805,8 @@ class MainMenu():
     selRange = 1
     selDiff = 1
     selSubtraction = 0
+    #pygame.font.init()  
+    text = ""
     def __init__(self):
         self.paused = False
         self.clock = pygame.time.Clock()
@@ -920,7 +966,7 @@ class MainMenu():
                     self.selDiff += 1
                 else:
                     self.selDiff = 1
-        elif self.curSel == 2:
+        else:
             if self.selDiff == 1:
                 self.selDiff = 2
             else:
@@ -978,7 +1024,7 @@ class MainMenu():
                     #game mode is at (382, 510) and is 311,122 pixels
                     #exit is at (382,625) and is 311,122 pixels
                     
-                    #new game. launches into a new game of blocku, with current default behavior of creating a new random grid
+                    #new game. launches into a new game of blocku
                     if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 329 and cursor.rect.y < 451 and self.instBool == False and self.modeBool == False:
                         pygame.display.flip()
                         game = Game()
@@ -1035,6 +1081,8 @@ class MainMenu():
                         #click on story
                         if cursor.rect.x > 109 and cursor.rect.x < 435 and cursor.rect.y > 550 and cursor.rect.y < 730:
                             self.curSel = 3
+                            self.selDiff = 1
+                            self.menuImg = load_image('bg.png')
                             self.menuImg.blit(self.gModes, (101,167))
                             #which is selected?
                             self.menuImg.blit(self.hi,(126,572))
@@ -1042,16 +1090,15 @@ class MainMenu():
                         #if time attack or puzzle mode is selected
                         if self.curSel == 1 or self.curSel == 2:
                             
-                            self.menuImg.blit(self.subAdd, (511,72))
-                            self.menuImg.blit(self.leftArrow, (529,100))
-                            self.menuImg.blit(self.rightArrow, (909,100))
-                            
                             numRange = pygame.font.Font(None,42).render("Select Number Range",1,(0,0,0))
                             self.menuImg.blit(numRange,(526,298))
 
                             difficulty = pygame.font.Font(None,42).render("Select Difficulty",1,(0,0,0))
                             self.menuImg.blit(difficulty,(526,498))
 
+                            self.menuImg.blit(self.subAdd, (511,72))
+                            self.menuImg.blit(self.leftArrow, (529,100))
+                            self.menuImg.blit(self.rightArrow, (909,100))
                             self.menuImg.blit(self.leftArrow,(529,341))
                             self.menuImg.blit(self.rightArrow,(909,341))
                             self.menuImg.blit(self.leftArrow,(529,543))
@@ -1090,6 +1137,25 @@ class MainMenu():
                             #sub left         529 100
                             #sub right        909 100
 
+                        #click on story mode
+                        if self.curSel == 3:
+
+                            
+
+                            difficulty = pygame.font.Font(None,42).render("Select Difficulty",1,(0,0,0))
+                            self.menuImg.blit(difficulty,(526,498))
+
+                            self.menuImg.blit(self.leftArrow,(529,543))
+                            self.menuImg.blit(self.rightArrow,(909,543))
+                            
+                            #difficulty left arrow
+                            if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 543 and cursor.rect.y < 585:
+                                self.diffChange(1)
+
+                            #difficulty right arrow
+                            if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 543 and cursor.rect.y < 585:
+                                self.diffChange(2)
+
 
                         #close gModes KEEP THIS LAST
                         if cursor.rect.x > 980 and cursor.rect.x < 1094 and cursor.rect.y > 684 and cursor.rect.y < 728:
@@ -1103,12 +1169,29 @@ class MainMenu():
                     if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 765 and cursor.rect.y < 887 and self.instBool == False and self.modeBool == False:
                         pygame.quit()
 
+                if self.curSel == 3:
+                    
+                    if event.type == QUIT:
+                        sys.exit()
+                                
+                            #if event.type != KEYDOWN:
+                            #    continue
+		  
+                    if event.type == KEYDOWN and event.key == K_BACKSPACE:
+                        self.text = self.text[0:-1]
+                    elif event.type == KEYDOWN and event.key == K_RETURN:
+                        print self.text
+                    elif event.type == KEYDOWN:
+                        self.text += event.unicode.encode("ascii")
+                    display_box(self.menuImg,'' + self.text, 529,400)
+
 
                 #display defaults
                 if self.selSubtraction == 0 and self.modeBool == True and (self.curSel == 1 or self.curSel == 2):
                     self.selSub.change('Addition')
                 else:
                     self.selSub.change('Subtraction')
+                
                 if self.modeBool == True and (self.curSel == 1 or self.curSel == 2):        
                     if self.selRange == 1:
                         self.selRng.change('Low')
@@ -1125,6 +1208,14 @@ class MainMenu():
                         self.selDifficulty.change('Hard')
                     elif self.selDiff == 4:
                         self.selDifficulty.change('Very Hard')
+                        
+                elif self.modeBool == True and self.curSel == 3:
+                    self.selRng.change('')
+                    self.selSub.change('')
+                    if self.selDiff == 1:
+                        self.selDifficulty.change('Easy')
+                    elif self.selDiff == 2:
+                        self.selDifficulty.change('Medium')
                 else:
                     self.selRng.change('')
                     self.selDifficulty.change('')
