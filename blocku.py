@@ -1,9 +1,11 @@
+#http://freebooks.by.ru/view/RedHatLinux6Unleashed/rhl6u348.htm
 #http://stackoverflow.com/questions/3696114/when-blitting-a-sprite-with-colorkey-transparency-in-pygame-the-areas-that-shoul
 """Main Blocku game logic class
 
 import every thing that the activity needs and run game code
 
-Authored by Fran Rogers and Ariel Zamparini
+Original creators: Fran Rogers and Ariel Zamparini
+Developed by: Kai Ito
 """
 
 #!/usr/bin/python
@@ -237,9 +239,9 @@ def LoadBoard(nm):
     return blocks
 
 # Will grab the last line of the file
-def LastLine(read_size = 1024):
+def LastLine(nm):
     try:
-        file = open("boards\\testFile.txt", 'rU')
+        file = open("boards\\" + nm + ".txt", 'rU')
         lines = file.readlines()
         file.close()
     except:
@@ -381,6 +383,7 @@ class Game:
     def run(self, curMode, rng, dif, sub, name):
         pygame.mouse.set_visible(False)
         isRan = 0
+        editMode = False
 
         #print curMode
         #self.rangee = rng
@@ -423,9 +426,11 @@ class Game:
             Block.rangeRender = 57
 
         if pygame.font:
-            if sub == 0:
+            if curMode == 3:
+                objective = Text(LastLine(name),253,174)
+            elif not curMode == 3 and sub == 0:
                 objective = Text('Arrange blocks so that addition equals ' + str(answer),253,174) #Objective text
-            else:
+            elif not curMode == 3 and sub == 1:
                 objective = Text('Arrange blocks so that subtraction equals ' + str(answer),253,174) #Objective text
             solved = Text('',400,240,'red',142)  #Text for when solved
             timeText = Text('',375,25,'black',89) #text to display time elapsed
@@ -505,6 +510,8 @@ class Game:
                             block.rotate()
         else:
             allBlocks = LoadBoard(name)
+            if name == 'boardMaker':
+                editMode = True
             
         gridpos = GenerateGrid(allBlocks)
         if curMode == 1:
@@ -523,7 +530,7 @@ class Game:
         
         #allBlocks = LoadBoard() ##
         
-        answerStr = LastLine()  ##
+        #answerStr = LastLine()  ##
         #answerStr = 'Arrange blocks so that addition equals ' + str(answer) #*
         #print(answerStr)
         
@@ -670,44 +677,48 @@ class Game:
             
             if not keystate[K_RETURN] or keystate[K_KP1]:
                 keyDown = False
-            
-            for block in allBlocks:
-                #Block rotation when pressing enter
-                if (curMode == 1 and not (dif == 1 or dif == 2)) or curMode == 2 or (curMode == 3 and not dif == 1):
-                    if block.isLast == 1 and (keystate[K_RETURN] or keystate[K_KP1]) and not keyDown:
-                        block.rotate()
-                        numRotate += 1
-                        keyDown = True
-                isLast = block
 
-                #For block dragging
-                if event.get_grab():
-                    #debugText += ' holding mouse button 1'
-                    # and block.isGrabbed() == False
-                    if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
-                        anotherBlock = 0
-                        for blockB in allBlocks:
-                            if blockB.isMoving == True and blockB != block:
-                                anotherBlock = 1
+            if not editMode:
+                for block in allBlocks:
+                    #Block rotation when pressing enter
+                    if (curMode == 1 and not (dif == 1 or dif == 2)) or curMode == 2 or (curMode == 3 and not dif == 1):
+                        if block.isLast == 1 and (keystate[K_RETURN] or keystate[K_KP1]) and not keyDown:
+                            block.rotate()
+                            numRotate += 1
+                            keyDown = True
+                    isLast = block
+
+                    #For block dragging
+                    if event.get_grab():
+                        #debugText += ' holding mouse button 1'
+                        # and block.isGrabbed() == False
+                        if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
+                            anotherBlock = 0
+                            for blockB in allBlocks:
+                                if blockB.isMoving == True and blockB != block:
+                                    anotherBlock = 1
+                                    break
+                            if anotherBlock == 0:
+                                if curMode == 1 or curMode == 3:
+                                    block.grab([cursor.rect.x, cursor.rect.y])
+                                block.setGrabbed(True)
+                                for tempblock in allBlocks:
+                                    tempblock.isLast = 0
+                                block.isLast = 1
+                                isRan = 1
                                 break
-                        if anotherBlock == 0:
-                            if curMode == 1 or curMode == 3:
-                                block.grab([cursor.rect.x, cursor.rect.y])
-                            block.setGrabbed(True)
-                            for tempblock in allBlocks:
-                                tempblock.isLast = 0
-                            block.isLast = 1
-                            isRan = 1
-                            break
-                    elif block.isMoving == True and (curMode == 1 or curMode == 3):
-                        block.grab([cursor.rect.x, cursor.rect.y])
-                elif isRan == 1 and block.isLast == 1:
-                    for piece in gridpos:
-                        if cursor.rect.x > piece[0] and cursor.rect.x < piece[0]+108 and cursor.rect.y > piece[1] and cursor.rect.y < piece[1]+108 and block.isMoving == True and (curMode == 1 or curMode == 3):
-                            place = piece[0] + 54, piece[1] + 54
-                            isLast.grab(place)
-                            isRan = 0
-                    block.setGrabbed(False)
+                        elif block.isMoving == True and (curMode == 1 or curMode == 3):
+                            block.grab([cursor.rect.x, cursor.rect.y])
+                    elif isRan == 1 and block.isLast == 1:
+                        for piece in gridpos:
+                            if cursor.rect.x > piece[0] and cursor.rect.x < piece[0]+108 and cursor.rect.y > piece[1] and cursor.rect.y < piece[1]+108 and block.isMoving == True and (curMode == 1 or curMode == 3):
+                                place = piece[0] + 54, piece[1] + 54
+                                isLast.grab(place)
+                                isRan = 0
+                        block.setGrabbed(False)
+            else:
+                pass
+                #code will go here for clickign on grid piece to add a block
 
             # note random here is random.random()
             # note foreach here is for object in
@@ -722,7 +733,7 @@ class Game:
             
 class Text(pygame.sprite.Sprite):
     text = ''
-    def __init__(self,txt='',x=0,y=0,clr='blue',size=38):
+    def __init__(self,txt='',x=0,y=0,clr='black',size=42):
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.Font(None, size)
         self.color = Color(clr)
@@ -801,6 +812,7 @@ class MainMenu():
         self.hi = load_image('hilite.png').convert()
         self.leftArrow = load_image('left.png').convert()
         self.rightArrow = load_image('right.png').convert()
+        self.button = load_image('button.png').convert()
 
         if pygame.font:
             self.selRng = Text('',575,350,'black',42)
@@ -1114,6 +1126,10 @@ class MainMenu():
 
                         #click on story mode
                         if self.curSel == 3:
+
+                            self.menuImg.blit(self.leftArrow,(529,543))
+                            self.menuImg.blit(self.rightArrow,(909,543))
+                            self.menuImg.blit(self.button,(546,215))
                             
                             difficulty = pygame.font.Font(None,42).render("Select Difficulty",1,(0,0,0))
                             self.menuImg.blit(difficulty,(526,498))
@@ -1121,8 +1137,8 @@ class MainMenu():
                             boardEnter = pygame.font.Font(None,42).render("Enter the name of board",1,(0,0,0))
                             self.menuImg.blit(boardEnter,(526,350))
 
-                            self.menuImg.blit(self.leftArrow,(529,543))
-                            self.menuImg.blit(self.rightArrow,(909,543))
+                            createText = pygame.font.Font(None,42).render("Create a board",1,(0,0,0))
+                            self.menuImg.blit(createText,(570,225))
                             
                             #difficulty left arrow
                             if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 543 and cursor.rect.y < 585:
@@ -1132,16 +1148,23 @@ class MainMenu():
                             if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 543 and cursor.rect.y < 585:
                                 self.diffChange(2)
 
+                            #create a board button
+                            if cursor.rect.x > 546 and cursor.rect.x < 806 and cursor.rect.y > 215 and cursor.rect.y < 265:
+                                game = Game()
+                                game.run(self.curSel, self.selRange, self.selDiff, self.selSubtraction, 'boardMaker')
+                                pygame.quit()
+
 
                         #close gModes KEEP THIS LAST
                         if cursor.rect.x > 980 and cursor.rect.x < 1094 and cursor.rect.y > 684 and cursor.rect.y < 728:
                             if self.curSel == 3:
-                                if not os.path.isfile("boards\\" + self.text + ".txt"):
+                                try:
+                                   outfile = open("boards\\" + self.text + ".txt", "r")
+                                   self.goodLoad = True
+                                except IOError:
                                     self.goodLoad = False
                                     self.text = "File does not exist"
                                     continue
-                                else:
-                                    self.goodLoad = True
                             self.menuImg = load_image('bg.png')
                             self.screen.blit(self.menuImg, (0,0))
                             self.modeBool = False
