@@ -37,12 +37,6 @@ def load_image(file):
         raise SystemExit('Could not load image "%s" %s'%(file, pygame.get_error()))
     return surface.convert()
 
-"""def load_images(*files):
-    imgs = []
-    for file in files:
-        imgs.append(load_image(file))
-    return imgs"""
-
 def display_box(screen, message, x, y):
 	"Print a message in a box in the middle of the screen"
 	font = pygame.font.Font(None, 42)
@@ -221,7 +215,7 @@ def LoadBoard(nm):
     
     # For now, we'll ignore the block height and color
     try:
-        file = open("boards\\" + nm + ".txt", "r")
+        file = open("boards" + os.sep + nm + ".txt", "r")
         numLines = file.readline()
         #print(numLines)
         blocks = list([] for i in range(int(numLines)))
@@ -238,10 +232,11 @@ def LoadBoard(nm):
     
     return blocks
 
+
 # Will grab the last line of the file
 def LastLine(nm):
     try:
-        file = open("boards\\" + nm + ".txt", 'rU')
+        file = open("boards" + os.sep + nm + ".txt", 'rU')
         lines = file.readlines()
         file.close()
     except:
@@ -424,22 +419,6 @@ class Game:
         elif rng == 3:
             answer = random.randint(100, 999)
             Block.rangeRender = 57
-
-        if pygame.font:
-            if curMode == 3:
-                objective = Text(LastLine(name),253,174)
-            elif not curMode == 3 and sub == 0:
-                objective = Text('Arrange blocks so that addition equals ' + str(answer),253,174) #Objective text
-            elif not curMode == 3 and sub == 1:
-                objective = Text('Arrange blocks so that subtraction equals ' + str(answer),253,174) #Objective text
-            solved = Text('',400,240,'red',142)  #Text for when solved
-            timeText = Text('',375,25,'black',89) #text to display time elapsed
-            
-            font = pygame.font.Font(None, 42)
-            check = font.render("Check Answer", 1, (0,230,0))
-            background.blit(check,[978,840])
-            pygame.display.flip()
-            
         
         
         # load images here
@@ -514,19 +493,45 @@ class Game:
                 editMode = True
             
         gridpos = GenerateGrid(allBlocks)
-        if curMode == 1:
-            Randomize(allBlocks)
-        elif curMode == 2:
-            for block in allBlocks:
-                for i in range(0, random.randint(1, 6)):
-                    block.rotate()
-                    numRotateTotal += 1
-            print numRotateTotal
+        if not editMode:
+            if curMode == 1 or curMode == 3:
+                Randomize(allBlocks)
+                if curMode == 3 and dif == 2:
+                    for block in allBlocks:
+                        for i in range(0, random.randint(1, 6)):
+                            block.rotate()
+            elif curMode == 2:
+                for block in allBlocks:
+                    for i in range(0, random.randint(1, 6)):
+                        block.rotate()
+                        numRotateTotal += 1
+                print numRotateTotal
         cursor = mouseUpdate(mouse.get_pos())
-        #pygame.display.update(cursor)
+
+        #in game text
+        if pygame.font:
+            if curMode == 3:
+                objective = Text(LastLine(name),253,174)
+            elif not curMode == 3 and sub == 0:
+                objective = Text('Arrange blocks so that addition equals ' + str(answer),253,174) #Objective text
+            elif not curMode == 3 and sub == 1:
+                objective = Text('Arrange blocks so that subtraction equals ' + str(answer),253,174) #Objective text
+            solved = Text('',400,240,'red',142)  #Text for when solved
+            timeText = Text('',375,25,'black',89) #text to display time elapsed
+
+            font = pygame.font.Font(None, 42)
+            if not editMode:
+                check = font.render("Check Answer", 1, (0,0,0))
+            else:
+                check = font.render("Save board", 1, (0,0,0))
+            background.blit(check,[978,840])
+            pygame.display.flip()
 
         #actually displays everything
-        allsprites = pygame.sprite.RenderPlain((cursor, allBlocks, objective, solved, timeText))
+        if not editMode:
+            allsprites = pygame.sprite.RenderPlain((cursor, allBlocks, objective, solved, timeText))
+        else:
+            allsprites = pygame.sprite.RenderPlain((cursor, objective, solved, timeText))
         
         #allBlocks = LoadBoard() ##
         
@@ -621,14 +626,18 @@ class Game:
                 if e.type == MOUSEBUTTONDOWN:
                     event.set_grab(1)
                     mousePossible = True
-                    if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
-                            result = Solve(allBlocks)
-                            if result == 'Solved!':
-                                solved.change('You Win!')
-                                completed = True
-                            else:
-                                loopCounter = 0
-                                solved.change('Incomplete')
+                    if not editMode:
+                        if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                                result = Solve(allBlocks)
+                                if result == 'Solved!':
+                                    solved.change('You Win!')
+                                    completed = True
+                                else:
+                                    loopCounter = 0
+                                    solved.change('Incomplete')
+                    else:
+                        pass
+                    #This will be save current custom created board
                                 
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
@@ -638,14 +647,18 @@ class Game:
                 elif e.type == KEYUP:
                     if(e.key == K_SPACE) or (e.key == K_KP3):
                         event.set_grab(0)
-                        if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
-                            result = Solve(allBlocks)
-                            if result == 'Solved!':
-                                solved.change('You Win!')
-                                completed = True
-                            else:
-                                loopCounter = 0
-                                solved.change('Incomplete')
+                        if not editMode:
+                            if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                                result = Solve(allBlocks)
+                                if result == 'Solved!':
+                                    solved.change('You Win!')
+                                    completed = True
+                                else:
+                                    loopCounter = 0
+                                    solved.change('Incomplete')
+                        else:
+                            pass
+                        #This will be save current custom created board
             
             #if keystate[K_b]:
                # pygame.mixer.music.play()
@@ -1158,13 +1171,27 @@ class MainMenu():
                         #close gModes KEEP THIS LAST
                         if cursor.rect.x > 980 and cursor.rect.x < 1094 and cursor.rect.y > 684 and cursor.rect.y < 728:
                             if self.curSel == 3:
-                                try:
-                                   outfile = open("boards\\" + self.text + ".txt", "r")
-                                   self.goodLoad = True
-                                except IOError:
+                                if os.path.isfile(os.path.join(os.getcwd(),"boards" + os.sep + self.text + ".txt")):
+                                    self.goodLoad = True
+                                else:
                                     self.goodLoad = False
-                                    self.text = "File does not exist"
+                                    self.text = 'File does not exist'
                                     continue
+                                """if platform.system() == 'Windows':
+                                    try:
+                                       outfile = open("boards\\" + self.text + ".txt", "r")
+                                       self.goodLoad = True
+                                    except IOError:
+                                        self.goodLoad = False
+                                        self.text = "File does not exist"
+                                        continue
+                                else:
+                                    if os.access("boards\\" + self.text + ".txt", os.F_OK):
+                                        self.goodLoad = True
+                                    else:
+                                        self.goodLoad = False
+                                        self.text = "File does not exist"
+                                        continue"""
                             self.menuImg = load_image('bg.png')
                             self.screen.blit(self.menuImg, (0,0))
                             self.modeBool = False
