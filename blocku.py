@@ -37,10 +37,10 @@ def load_image(file):
         raise SystemExit('Could not load image "%s" %s'%(file, pygame.get_error()))
     return surface.convert()
 
-def display_box(screen, message, x, y):
+def display_box(screen, message, x, y, w, h, size):
 	"Print a message in a box in the middle of the screen"
-	font = pygame.font.Font(None, 42)
-	rect = pygame.Rect([x, y, 300, 30])
+	font = pygame.font.Font(None, size)
+	rect = pygame.Rect([x, y, w, h])
 
 	#center = screen.get_rect().center
 	#rect.center = center
@@ -52,6 +52,33 @@ def display_box(screen, message, x, y):
 	
 	pygame.display.flip()
 
+def ask(screen, question, x, y, w, h, size):
+    "ask(screen, question) -> answer"
+    pygame.font.init()  
+    text = ""
+    display_box(screen, question + ": " + text,x,y,w,h,size)
+
+    while True:
+        pygame.time.wait(50)
+        event = pygame.event.poll()
+
+        if event.type == QUIT:
+            sys.exit()
+        if event.type != KEYDOWN:
+            continue
+
+        if event.key == K_BACKSPACE:
+            text = text[0:-1]
+        elif event.key == K_RETURN:
+            break
+        else:
+            text += event.unicode.encode("ascii")
+
+        display_box(screen, question + ": " + text,x,y,w,h,size)
+
+    return text
+
+    
 # num - number of blocks on one side of grid (ex: pass in 3 for a 3x3 grid)
 def GenerateAddition(num, answer):
     rows = list([] for i in range(num))
@@ -288,6 +315,7 @@ class Block(pygame.sprite.Sprite):
     origX = 0
     origY = 0
     rangeRender = 0
+    text = ''
     
     def __init__(self, n='', e='', s='', w='', x='', y=''):
         pygame.sprite.Sprite.__init__(self)
@@ -331,7 +359,15 @@ class Block(pygame.sprite.Sprite):
         self.image.blit(self.font.render(str(self.east), 0, self.color),(self.rangeRender,42))
         self.image.blit(self.font.render(str(self.south), 0, self.color),(39,75))
         self.image.blit(self.font.render(str(self.west), 0, self.color),(5,42))
-        
+
+    def edit(self, n, e, s, w):
+        print (str(self.rect.x) + ", " + str(self.rect.y))
+        self.north = n
+        self.east = e
+        self.south = s
+        self.west = w
+
+        self.update()
 
     def setGrabbed(self, sett):
         self.isMoving = sett
@@ -528,10 +564,10 @@ class Game:
             pygame.display.flip()
 
         #actually displays everything
-        if not editMode:
-            allsprites = pygame.sprite.RenderPlain((cursor, allBlocks, objective, solved, timeText))
-        else:
-            allsprites = pygame.sprite.RenderPlain((cursor, objective, solved, timeText))
+        #if not editMode:
+        allsprites = pygame.sprite.RenderPlain((cursor, allBlocks, objective, solved, timeText))
+        #else:
+            #allsprites = pygame.sprite.RenderPlain((cursor, objective, solved, timeText))
         
         #allBlocks = LoadBoard() ##
         
@@ -589,6 +625,12 @@ class Game:
         keyDown = False
         mins = 0
         numRotate = 0
+
+        #for block editing
+        n = 0
+        east = 0
+        s = 0
+        w = 0
         while 1:
             loopCounter += 1
             if curMode == 1:
@@ -688,14 +730,14 @@ class Game:
             if mousePossible == True:
                 cursor.mouseMoved(mouse.get_pos())
             
-            if not keystate[K_RETURN] or keystate[K_KP1]:
+            if not (keystate[K_KP1] or keystate[K_RETURN]):
                 keyDown = False
 
             if not editMode:
                 for block in allBlocks:
                     #Block rotation when pressing enter
                     if (curMode == 1 and not (dif == 1 or dif == 2)) or curMode == 2 or (curMode == 3 and not dif == 1):
-                        if block.isLast == 1 and (keystate[K_RETURN] or keystate[K_KP1]) and not keyDown:
+                        if block.isLast == 1 and (keystate[K_KP1] or keystate[K_RETURN]) and not keyDown:
                             block.rotate()
                             numRotate += 1
                             keyDown = True
@@ -730,8 +772,16 @@ class Game:
                                 isRan = 0
                         block.setGrabbed(False)
             else:
-                pass
-                #code will go here for clickign on grid piece to add a block
+                if event.get_grab():
+                    for block in allBlocks:
+                        if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
+                            #Edit North
+                            n = ask(self.screen, "Enter North", 529, 10, 300, 30, 42)
+                            east = ask(self.screen, "Enter East", 529, 10, 300, 30, 42)
+                            s = ask(self.screen, "Enter South", 529, 10, 300, 30, 42)
+                            w = ask(self.screen, "Enter West", 529, 10, 300, 30, 42)
+                            block.edit(n,east,s,w)
+                            event.set_grab(0)
 
             # note random here is random.random()
             # note foreach here is for object in
@@ -1177,21 +1227,6 @@ class MainMenu():
                                     self.goodLoad = False
                                     self.text = 'File does not exist'
                                     continue
-                                """if platform.system() == 'Windows':
-                                    try:
-                                       outfile = open("boards\\" + self.text + ".txt", "r")
-                                       self.goodLoad = True
-                                    except IOError:
-                                        self.goodLoad = False
-                                        self.text = "File does not exist"
-                                        continue
-                                else:
-                                    if os.access("boards\\" + self.text + ".txt", os.F_OK):
-                                        self.goodLoad = True
-                                    else:
-                                        self.goodLoad = False
-                                        self.text = "File does not exist"
-                                        continue"""
                             self.menuImg = load_image('bg.png')
                             self.screen.blit(self.menuImg, (0,0))
                             self.modeBool = False
@@ -1210,7 +1245,7 @@ class MainMenu():
                         print self.text
                     elif event.type == KEYDOWN:
                         self.text += event.unicode.encode("ascii")
-                    display_box(self.menuImg,'' + self.text, 529,380)
+                    display_box(self.menuImg,'' + self.text, 529,380, 300, 30, 42)
 
                 #display defaults
                 if self.selSubtraction == 0 and self.modeBool == True and (self.curSel == 1 or self.curSel == 2):
