@@ -52,30 +52,42 @@ def display_box(screen, message, x, y, w, h, size):
 	
 	pygame.display.flip()
 
-def ask(screen, question, x, y, w, h, size):
+def ask(screen, question, x, y, w, h, size, numOnly, limit):
     "ask(screen, question) -> answer"
     pygame.font.init()  
     text = ""
     display_box(screen, question + ": " + text,x,y,w,h,size)
 
-    while True:
+    while 1:
         pygame.time.wait(50)
         event = pygame.event.poll()
 
-        if event.type == QUIT:
-            sys.exit()
-        if event.type != KEYDOWN:
-            continue
-
-        if event.key == K_BACKSPACE:
-            text = text[0:-1]
-        elif event.key == K_RETURN:
-            break
+        if not numOnly:
+            if event.type == QUIT:
+                sys.exit()
+            if event.type != KEYDOWN:
+                continue
+            if event.key == K_BACKSPACE:
+                text = text[0:-1]
+            elif event.key == K_RETURN:
+                break
+            elif len(text) < limit:
+                text += event.unicode.encode("ascii")
         else:
-            text += event.unicode.encode("ascii")
-
+            if event.type == QUIT:
+                sys.exit()
+            if event.type != KEYDOWN:
+                continue
+            if event.key == K_BACKSPACE:
+                text = text[0:-1]
+            elif event.key == K_RETURN:
+                break
+            elif len(text) < 6 and (event.key == K_0 or event.key == K_1 or event.key == K_2 or event.key == K_3 or event.key == K_4 or event.key == K_5 or event.key == K_6 or event.key == K_7 or event.key == K_8 or event.key == K_9):
+                text += event.unicode.encode("ascii")
+                
         display_box(screen, question + ": " + text,x,y,w,h,size)
-
+    if text == '':
+        text = '0'
     return text
 
     
@@ -236,11 +248,8 @@ def LoadBoard(nm):
     # File format:
     # ---------------
     # Number of blocks in board
-    # X-Pos Y-Pos BlockHeight N S W E R G B
+    # X-Pos Y-Pos N S W E
     # NSWE = directions
-    # RGB = color of the block in RGB
-    
-    # For now, we'll ignore the block height and color
     try:
         file = open("boards" + os.sep + nm + ".txt", "r")
         numLines = file.readline()
@@ -354,14 +363,13 @@ class Block(pygame.sprite.Sprite):
         #keep the block on the screen
         self.rect = self.rect.clamp(SCREENRECT)
         self.image = self.blankImage.copy()
-        #self.image = self.images[0].copy()
         self.image.blit(self.font.render(str(self.north), 0, self.color),(39,3))
         self.image.blit(self.font.render(str(self.east), 0, self.color),(self.rangeRender,42))
         self.image.blit(self.font.render(str(self.south), 0, self.color),(39,75))
         self.image.blit(self.font.render(str(self.west), 0, self.color),(5,42))
 
     def edit(self, n, e, s, w):
-        print (str(self.rect.x) + ", " + str(self.rect.y))
+        #print (str(self.rect.x) + ", " + str(self.rect.y))
         self.north = n
         self.east = e
         self.south = s
@@ -631,6 +639,11 @@ class Game:
         east = 0
         s = 0
         w = 0
+
+        #for block writing
+        numBlocks = 0
+        blocksToWrite = []
+        
         while 1:
             loopCounter += 1
             if curMode == 1:
@@ -678,8 +691,20 @@ class Game:
                                     loopCounter = 0
                                     solved.change('Incomplete')
                     else:
-                        pass
-                    #This will be save current custom created board
+                        if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                            blocksToWrite.append("0")
+                            boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10)
+                            for block in allBlocks:
+                                if int(block.north) != 0 and int(block.east) != 0 and int(block.south) != 0 and int(block.west) != 0:
+                                    blocksToWrite.append(str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
+                                    numBlocks += 1
+                            blocksToWrite[0] = str(numBlocks)
+                            blocksToWrite.append(boardName)
+                            for lol in blocksToWrite:
+                                print lol
+                                        #X Y N S W E
+                                #print (str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
+
                                 
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
@@ -699,8 +724,28 @@ class Game:
                                     loopCounter = 0
                                     solved.change('Incomplete')
                         else:
-                            pass
-                        #This will be save current custom created board
+                            if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                                blocksToWrite.append("0")
+                                boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10)
+                                allsprites.update()
+                                screen.blit(background, (0,0))
+                                allsprites.draw(screen)
+                                pygame.display.flip()
+                                objText = ask(self.screen, "Enter Objective Text", 250, 10, 750, 30, 30, False, 60)
+                                for block in allBlocks:
+                                    if int(block.north) != 0 and int(block.east) != 0 and int(block.south) != 0 and int(block.west) != 0:
+                                        blocksToWrite.append(str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
+                                        numBlocks += 1
+                                blocksToWrite[0] = str(numBlocks)
+                                blocksToWrite.append(objText)
+                                #blocksToWrite.append(boardName)
+                                f = open("boards" + os.sep + boardName + ".txt", 'w')
+                                for line in blocksToWrite:
+                                    print line
+                                    f.write(line + "\n")
+                                        #X Y N S W E
+                                #print (str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
+
             
             #if keystate[K_b]:
                # pygame.mixer.music.play()
@@ -753,7 +798,7 @@ class Game:
                                 if blockB.isMoving == True and blockB != block:
                                     anotherBlock = 1
                                     break
-                            if anotherBlock == 0:
+                            if anotherBlock == 0:   
                                 if curMode == 1 or curMode == 3:
                                     block.grab([cursor.rect.x, cursor.rect.y])
                                 block.setGrabbed(True)
@@ -776,10 +821,10 @@ class Game:
                     for block in allBlocks:
                         if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
                             #Edit North
-                            n = ask(self.screen, "Enter North", 529, 10, 300, 30, 42)
-                            east = ask(self.screen, "Enter East", 529, 10, 300, 30, 42)
-                            s = ask(self.screen, "Enter South", 529, 10, 300, 30, 42)
-                            w = ask(self.screen, "Enter West", 529, 10, 300, 30, 42)
+                            n = ask(self.screen, "Enter North", 529, 10, 300, 30, 42, True, 6)
+                            east = ask(self.screen, "Enter East", 529, 10, 300, 30, 42, True, 6)
+                            s = ask(self.screen, "Enter South", 529, 10, 300, 30, 42, True, 6)
+                            w = ask(self.screen, "Enter West", 529, 10, 300, 30, 42, True, 6)
                             block.edit(n,east,s,w)
                             event.set_grab(0)
 
