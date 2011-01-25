@@ -28,14 +28,17 @@ if not pygame.image.get_extended():
 SCREENRECT     = Rect(0, 0, 1200, 900)
 KEYBOARDMOVESPEED = 10
 
-def load_image(file):
+def load_image(file, alpha=False):
     "loads an image, prepares it for play"
     file = os.path.join('data', file)
     try:
         surface = pygame.image.load(file)
     except pygame.error:
         raise SystemExit('Could not load image "%s" %s'%(file, pygame.get_error()))
-    return surface.convert()
+    if alpha:
+        return surface.convert_alpha()
+    else:
+        return surface.convert()
 
 def display_box(screen, message, x, y, w, h, size):
 	"Print a message in a box in the middle of the screen"
@@ -572,10 +575,13 @@ class Game:
             pygame.display.flip()
 
         #actually displays everything
-        #if not editMode:
-        allsprites = pygame.sprite.RenderPlain((cursor, allBlocks, objective, solved, timeText))
-        #else:
-            #allsprites = pygame.sprite.RenderPlain((cursor, objective, solved, timeText))
+        allsprites = pygame.sprite.LayeredUpdates()
+        allsprites.add(allBlocks)
+        allsprites.add(objective)
+        allsprites.add(timeText)
+        allsprites.add(solved)
+        allsprites.add(cursor)
+        
         
         #allBlocks = LoadBoard() ##
         
@@ -719,17 +725,21 @@ class Game:
                         if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                             blocksToWrite.append("0")
                             boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10)
+                            allsprites.update()
+                            screen.blit(background, (0,0))
+                            allsprites.draw(screen)
+                            pygame.display.flip()
+                            objText = ask(self.screen, "Enter Objective Text", 250, 10, 750, 30, 30, False, 60)
                             for block in allBlocks:
                                 if int(block.north) != 0 and int(block.east) != 0 and int(block.south) != 0 and int(block.west) != 0:
                                     blocksToWrite.append(str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
                                     numBlocks += 1
                             blocksToWrite[0] = str(numBlocks)
-                            blocksToWrite.append(boardName)
-                            for lol in blocksToWrite:
-                                print lol
-                                        #X Y N S W E
-                                #print (str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
-
+                            blocksToWrite.append(objText)
+                                #blocksToWrite.append(boardName)
+                            f = open("boards" + os.sep + boardName + ".txt", 'w')
+                            for line in blocksToWrite:
+                                f.write(line + "\n")
                                 
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
@@ -766,7 +776,6 @@ class Game:
                                 #blocksToWrite.append(boardName)
                                 f = open("boards" + os.sep + boardName + ".txt", 'w')
                                 for line in blocksToWrite:
-                                    print line
                                     f.write(line + "\n")
                                         #X Y N S W E
                                 #print (str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
@@ -803,7 +812,7 @@ class Game:
             if not (keystate[K_KP1] or keystate[K_RETURN]):
                 keyDown = False
 
-            if not editMode:
+            if not editMode and not completed:
                 for block in allBlocks:
                     #Block rotation when pressing enter
                     if (curMode == 1 and not (dif == 1 or dif == 2)) or curMode == 2 or (curMode == 3 and not dif == 1):
@@ -823,7 +832,7 @@ class Game:
                                 if blockB.isMoving == True and blockB != block:
                                     anotherBlock = 1
                                     break
-                            if anotherBlock == 0:   
+                            if anotherBlock == 0:
                                 if curMode == 1 or curMode == 3:
                                     block.grab([cursor.rect.x, cursor.rect.y])
                                 block.setGrabbed(True)
@@ -841,7 +850,7 @@ class Game:
                                 isLast.grab(place)
                                 isRan = 0
                         block.setGrabbed(False)
-            else:
+            elif editMode:
                 if event.get_grab():
                     for block in allBlocks:
                         if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
@@ -881,12 +890,12 @@ class Text(pygame.sprite.Sprite):
     def change(self, new=''):
         self.text = new
         self.update()
-
+    
 class mouseUpdate(pygame.sprite.Sprite):
     def __init__(self, pos):
         x,y = pos
         pygame.sprite.Sprite.__init__(self)
-        thisImg = load_image('mouse.png')
+        thisImg = load_image('mouse.png', True)
         #over = pygame.sprite.LayeredUpdates(*[self])
 
         #over.move_to_front(self)
@@ -902,7 +911,6 @@ class mouseUpdate(pygame.sprite.Sprite):
 
     def mouseMoved(self,mouse):
         self.rect.x, self.rect.y = mouse
-        
 
     def move(self, direction):
         # up = 0, right = 1, down = 2, left = 3
