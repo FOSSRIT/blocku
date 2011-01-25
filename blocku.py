@@ -419,7 +419,7 @@ class Game:
         pass
 
     # The main game loop.
-    def run(self, curMode, rng, dif, sub, name):
+    def run(self, curMode, rng, dif, sub, name, cas):
         pygame.mouse.set_visible(False)
         isRan = 0
         editMode = False
@@ -634,6 +634,20 @@ class Game:
         mins = 0
         numRotate = 0
 
+        if cas == 0:
+            if dif == 1:
+                mins = 5
+                timer = 59
+            elif dif == 2:
+                mins = 11
+                timer = 59
+            elif dif == 3:
+                mins = 17
+                timer = 59
+            elif dif == 4:
+                mins = 23
+                timer = 59
+
         #for block editing
         n = 0
         east = 0
@@ -646,7 +660,7 @@ class Game:
         
         while 1:
             loopCounter += 1
-            if curMode == 1:
+            if curMode == 1 and cas == 1:
                 if not completed:
                     counter += 1
                     if counter > 30:
@@ -656,6 +670,17 @@ class Game:
                         mins += 1
                         timer = 0
                 timeText.change('Time Elapsed ' + str(mins) + ':' + str(timer))
+            elif curMode == 1 and cas == 0:
+                #dif 1 2 3 4
+                if not completed:
+                    counter += 1
+                    if counter > 30:
+                        timer -= 1
+                        counter = 0
+                    if timer < 0:
+                        mins -= 1
+                        timer = 59
+                timeText.change('Time Remaining ' + str(mins) + ':' + str(timer))
             elif curMode == 2:
                 timeText.change('Number of Rotations: ' + str(numRotate))
             
@@ -897,7 +922,8 @@ class MainMenu():
     curSel = 1
     selRange = 1
     selDiff = 1
-    selSubtraction = 0  
+    selSubtraction = 0
+    cas = 1
     text = ""
     goodLoad = False
     def __init__(self):
@@ -923,9 +949,11 @@ class MainMenu():
         self.button = load_image('button.png').convert()
 
         if pygame.font:
-            self.selRng = Text('',575,350,'black',42)
+            self.selRng = Text('',575,400,'black',42)
+            self.selRng2 = Text('',575,350,'black',42)
             self.selDifficulty = Text('',575,550,'black',42)
             self.selSub = Text('',575,105,'black',42)
+            self.selCas = Text('',575,260,'black',42)
 
         self.screen = pygame.display.set_mode((1200,900))
         #self.screen.blit(self.menuImg,(0,0))
@@ -1072,10 +1100,16 @@ class MainMenu():
         else:
             self.selSubtraction = 0
 
+    def casChange(self):
+        if self.cas == 0:
+            self.cas = 1
+        else:
+            self.cas = 0
+
     def loop(self):
         pygame.mouse.set_visible(False)
         cursor = mouseUpdate(mouse.get_pos())
-        allsprites = pygame.sprite.RenderPlain((cursor, self.selRng, self.selDifficulty, self.selSub))
+        allsprites = pygame.sprite.RenderPlain((cursor, self.selRng, self.selDifficulty, self.selSub, self.selRng2, self.selCas))
         
         mousePossible = True
         
@@ -1122,7 +1156,7 @@ class MainMenu():
                     if cursor.rect.x > 466 and cursor.rect.x < 777 and cursor.rect.y > 329 and cursor.rect.y < 451 and self.instBool == False and self.modeBool == False:
                         pygame.display.flip()
                         game = Game()
-                        game.run(self.curSel, self.selRange, self.selDiff, self.selSubtraction, self.text)
+                        game.run(self.curSel, self.selRange, self.selDiff, self.selSubtraction, self.text, self.cas)
                         pygame.quit()
                             
                     #insturctions
@@ -1185,27 +1219,50 @@ class MainMenu():
                         #if time attack or puzzle mode is selected
                         if self.curSel == 1 or self.curSel == 2:
                             
-                            numRange = pygame.font.Font(None,42).render("Select Number Range",1,(0,0,0))
-                            self.menuImg.blit(numRange,(526,298))
-
                             difficulty = pygame.font.Font(None,42).render("Select Difficulty",1,(0,0,0))
                             self.menuImg.blit(difficulty,(526,498))
 
                             self.menuImg.blit(self.subAdd, (511,72))
                             self.menuImg.blit(self.leftArrow, (529,100))
                             self.menuImg.blit(self.rightArrow, (909,100))
-                            self.menuImg.blit(self.leftArrow,(529,341))
-                            self.menuImg.blit(self.rightArrow,(909,341))
                             self.menuImg.blit(self.leftArrow,(529,543))
                             self.menuImg.blit(self.rightArrow,(909,543))
 
-                            #range left arrow
-                            if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 341 and cursor.rect.y < 383:
-                                self.rangeChange(1)
+                            if self.curSel == 1:
+                                numRange = pygame.font.Font(None,42).render("Select Number Range",1,(0,0,0))
+                                self.menuImg.blit(numRange,(526,348))
+                                self.menuImg.blit(self.leftArrow,(529,391))
+                                self.menuImg.blit(self.rightArrow,(909,391))
+                                self.menuImg.blit(self.leftArrow,(529,254))
+                                self.menuImg.blit(self.rightArrow,(909,254))
+                                
+                                #range left arrow
+                                if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 391 and cursor.rect.y < 433:
+                                    self.rangeChange(1)
 
-                            #range right arrow
-                            if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 341 and cursor.rect.y < 383:
-                                self.rangeChange(2)
+                                #range right arrow
+                                if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 391 and cursor.rect.y < 433:
+                                    self.rangeChange(2)
+
+                                #casual left arrow
+                                if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 254 and cursor.rect.y < 496:
+                                    self.casChange()
+
+                                #casual right arrow
+                                if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 254 and cursor.rect.y < 496:
+                                    self.casChange()
+                            else:
+                                numRange = pygame.font.Font(None,42).render("Select Number Range",1,(0,0,0))
+                                self.menuImg.blit(numRange,(526,298))
+                                self.menuImg.blit(self.leftArrow,(529,341))
+                                self.menuImg.blit(self.rightArrow,(909,341))
+                                #range left arrow
+                                if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 341 and cursor.rect.y < 383:
+                                    self.rangeChange(1)
+
+                                #range right arrow
+                                if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 341 and cursor.rect.y < 383:
+                                    self.rangeChange(2)
 
                             #difficulty left arrow
                             if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 543 and cursor.rect.y < 585:
@@ -1297,35 +1354,61 @@ class MainMenu():
                     self.selSub.change('Addition')
                 else:
                     self.selSub.change('Subtraction')
-                
-                if self.modeBool == True and (self.curSel == 1 or self.curSel == 2):        
-                    if self.selRange == 1:
-                        self.selRng.change('Low')
-                    elif self.selRange == 2:
-                        self.selRng.change('Medium')
-                    elif self.selRange == 3:
-                        self.selRng.change('High')
+                    
+                if self.modeBool == True and (self.curSel == 1 or self.curSel == 2):
+                    if self.curSel == 2:
+                        self.selRng.change('')
+                        self.selCas.change('')
+                        if self.selRange == 1:
+                            self.selRng2.change('15 - 40')
+                        elif self.selRange == 2:
+                            self.selRng2.change('30 - 99')
+                        elif self.selRange == 3:
+                            self.selRng2.change('100 - 999')
+                    else:
+                        self.selRng2.change('')
+                        if self.selRange == 1:
+                            self.selRng.change('15 - 40')
+                        elif self.selRange == 2:
+                            self.selRng.change('30 - 99')
+                        elif self.selRange == 3:
+                            self.selRng.change('100 - 999')
+                            
+                        if self.cas == 1:
+                            self.selCas.change('Casual')
+                        else:
+                            self.selCas.change('Against Time')
 
-                    if self.selDiff == 1:
-                        self.selDifficulty.change('Easy')
-                    elif self.selDiff == 2:
-                        self.selDifficulty.change('Medium')
-                    elif self.selDiff == 3:
-                        self.selDifficulty.change('Hard')
-                    elif self.selDiff == 4:
-                        self.selDifficulty.change('Very Hard')
+                    if self.curSel == 1:
+                        if self.selDiff == 1:
+                            self.selDifficulty.change('3 x 3 No Rotation')
+                        elif self.selDiff == 2:
+                            self.selDifficulty.change('4 x 4 No Rotation')
+                        elif self.selDiff == 3:
+                            self.selDifficulty.change('3 x 3 With Rotation')
+                        elif self.selDiff == 4:
+                            self.selDifficulty.change('4 x 4 With Rotation')
+                    else:
+                        if self.selDiff == 1:
+                            self.selDifficulty.change('3 x 3 With Rotation')
+                        elif self.selDiff == 2:
+                            self.selDifficulty.change('4 x 4 With Rotation')
                         
                 elif self.modeBool == True and self.curSel == 3:
                     self.selRng.change('')
                     self.selSub.change('')
+                    self.selCas.change('')
+                    self.selRng2.change('')
                     if self.selDiff == 1:
-                        self.selDifficulty.change('Easy')
+                        self.selDifficulty.change('No Rotation')
                     elif self.selDiff == 2:
-                        self.selDifficulty.change('Medium')
+                        self.selDifficulty.change('With Rotation')
                 else:
+                    self.selRng2.change('')
                     self.selRng.change('')
                     self.selDifficulty.change('')
                     self.selSub.change('')
+                    self.selCas.change('')
                             
             
             #cursor.mouseMoved(mouse.get_pos())
