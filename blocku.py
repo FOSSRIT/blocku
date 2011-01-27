@@ -1,5 +1,3 @@
-#http://freebooks.by.ru/view/RedHatLinux6Unleashed/rhl6u348.htm
-#http://stackoverflow.com/questions/3696114/when-blitting-a-sprite-with-colorkey-transparency-in-pygame-the-areas-that-shoul
 """Main Blocku game logic class
 
 import every thing that the activity needs and run game code
@@ -56,7 +54,6 @@ def display_box(screen, message, x, y, w, h, size):
 	pygame.display.flip()
 
 def ask(screen, question, x, y, w, h, size, numOnly, limit):
-    "ask(screen, question) -> answer"
     pygame.font.init()  
     text = ""
     display_box(screen, question + ": " + text,x,y,w,h,size)
@@ -367,6 +364,10 @@ class Block(pygame.sprite.Sprite):
         self.rect = self.rect.clamp(SCREENRECT)
         self.image = self.blankImage.copy()
         self.image.blit(self.font.render(str(self.north), 0, self.color),(39,3))
+        if self.east < 10:
+            self.rangeRender = 65
+        else:
+            self.rangeRender = 57
         self.image.blit(self.font.render(str(self.east), 0, self.color),(self.rangeRender,42))
         self.image.blit(self.font.render(str(self.south), 0, self.color),(39,75))
         self.image.blit(self.font.render(str(self.west), 0, self.color),(5,42))
@@ -492,17 +493,7 @@ class Game:
         
         gridImg1 = squares
             
-        #blocks are Block(n,s,e,w,x,y) xy= starting position
-        #
-        #
-        #
-        #RIGHT HERE FOR RANDOM OR READ IN
-        #
-        #
-        #
-        #
-        # Uncomment lines with an asterisk to make the game generate a random board again
-        # Lines with a double pound are used to load a board
+        #Board generation depending on mode selected
         if not curMode == 3: 
             if sub == 0:
                 if dif == 1:
@@ -542,7 +533,7 @@ class Game:
         gridpos = GenerateGrid(allBlocks)
         if not editMode:
             if curMode == 1 or curMode == 3:
-                Randomize(allBlocks)
+                #Randomize(allBlocks)
                 if curMode == 3 and dif == 2:
                     for block in allBlocks:
                         for i in range(0, random.randint(1, 6)):
@@ -552,61 +543,72 @@ class Game:
                     for i in range(0, random.randint(1, 6)):
                         block.rotate()
                         numRotateTotal += 1
-                print numRotateTotal
         cursor = mouseUpdate(mouse.get_pos())
 
         #in game text
         if pygame.font:
-            if curMode == 3:
-                objective = Text(LastLine(name),253,174)
-            elif not curMode == 3 and sub == 0:
-                objective = Text('Arrange blocks so that addition equals ' + str(answer),253,174) #Objective text
-            elif not curMode == 3 and sub == 1:
-                objective = Text('Arrange blocks so that subtraction equals ' + str(answer),253,174) #Objective text
+            objective = Text('',253,174,'black',46)
+            if sub == 0:
+                if curMode == 3:
+                    objective.change(LastLine(name))
+                elif curMode == 1 and dif < 3:
+                     objective.change('Arrange blocks so that addition equals ' + str(answer))
+                elif curMode == 1 and dif > 2:
+                    objective.change('Arrange and rotate blocks so that addition equals ' + str(answer))
+                elif curMode == 2:
+                    objective.change('Rotate blocks so that addition equals ' + str(answer))
+            else:
+                if curMode == 3:
+                    objective.change(LastLine(name))
+                elif curMode == 1 and dif < 3:
+                     objective.change('Arrange blocks so that subtraction equals ' + str(answer))
+                elif curMode == 1 and dif > 2:
+                    objective.change('Arrange and rotate blocks so that subtraction equals ' + str(answer))
+                elif curMode == 2:
+                    objective.change('Rotate blocks so that subtraction equals ' + str(answer))
             solved = Text('',400,240,'red',142)  #Text for when solved
             timeText = Text('',375,25,'black',89) #text to display time elapsed
+            puzGoal = Text('',20,242,'black',42) #Text for puzzle mode goal
 
             font = pygame.font.Font(None, 42)
+            toMenu = font.render("Main Menu", 1, (0,0,0))
+            if curMode == 2:
+                goal = font.render("Try to beat:", 1, (0,0,0))
+            elif curMode == 1:
+                goal = font.render("Recent Times:", 1, (0,0,0))
             if not editMode:
+                if not curMode == 3:
+                    background.blit(goal,[20,200])
                 check = font.render("Check Answer", 1, (0,0,0))
             else:
                 check = font.render("Save board", 1, (0,0,0))
+            background.blit(toMenu,[30,840])
             background.blit(check,[978,840])
             pygame.display.flip()
 
+        highScores = []
+
+        #high scores
+        if curMode == 1:
+            ff = open("scores" + os.sep + "timeRecent.txt", 'r')
+            for line in ff:
+                highScores.append(line)
+            for i in range(len(highScores)):
+                rec = font.render(highScores[i],1,(0,0,0))
+                background.blit(rec,[25,240+(30*i)])
+
+        elif curMode == 2:
+            puzGoal.change(str(numRotateTotal) + ' rotations')
+
         #actually displays everything
         allsprites = pygame.sprite.LayeredUpdates()
-        allsprites.add(allBlocks)
-        allsprites.add(objective)
-        allsprites.add(timeText)
+        allsprites.add((allBlocks, timeText, objective, puzGoal))
         allsprites.add(solved)
         allsprites.add(cursor)
         
-        
-        #allBlocks = LoadBoard() ##
-        
-        #answerStr = LastLine()  ##
-        #answerStr = 'Arrange blocks so that addition equals ' + str(answer) #*
-        #print(answerStr)
-        
-        #print(allBlocks)
-
-        # Default grid positions - handled now by GenerateGrid()
-        #gridpos = [(200,200),(272,200),(344,200),(200,272),(272,272),(344,272),(200,344),(272,344),(344,344)]
-        #print(gridpos[0][0])
-        
+        #Blit a grid piece to each block before they get scrambled
         for i in range(len(gridpos)):
             background.blit(gridImg1, gridpos[i])
-
-        #for i in range(len(allBlocks)):
-        #    allBlocks[i].update()
-        #    background.blit(allBlocks[i].image,[allBlocks[i].rect.x,allBlocks[i].rect.y])
-        
-        #get the image and screen in the same format
-        """if background.get_bitsize() == 8:
-            set_palette(background.get_palette())
-        else:
-            background.convert()"""
 
         screen.blit(background,(0,0))
         pygame.display.flip()
@@ -615,15 +617,6 @@ class Game:
         icon = pygame.transform.scale(iconImg, (32, 32))
         pygame.display.set_icon(icon)
         pygame.display.set_caption('Blocku')
-
-        
-        
-        #if a key is down
-        #global keyDown
-            
-            #spriteBatch.add(mainText())
-        
-        #cursor.move_to_front()
         
 
         # it is important to note that like xna the origin is 0,0
@@ -639,7 +632,9 @@ class Game:
         keyDown = False
         mins = 0
         numRotate = 0
+        name = 'null'
 
+        #if goign against time, set up time limits
         if cas == 0:
             if dif == 1:
                 mins = 5
@@ -666,6 +661,17 @@ class Game:
         
         while 1:
             loopCounter += 1
+            #timer code
+
+            #for the sake of a leading zero
+            emptyMin = ''
+            emptySec = ''
+            curTime = ''
+            if mins < 10:
+                emptyMin = '0'
+            if timer < 10:
+                emptySec = '0'
+            
             if curMode == 1 and cas == 1:
                 if not completed:
                     counter += 1
@@ -675,7 +681,8 @@ class Game:
                     if timer > 59:
                         mins += 1
                         timer = 0
-                timeText.change('Time Elapsed ' + str(mins) + ':' + str(timer))
+                curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
+                timeText.change('Time Elapsed ' + curTime)
             elif curMode == 1 and cas == 0:
                 #dif 1 2 3 4
                 if not completed:
@@ -686,10 +693,12 @@ class Game:
                     if timer < 0:
                         mins -= 1
                         timer = 59
-                timeText.change('Time Remaining ' + str(mins) + ':' + str(timer))
+                curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
+                timeText.change('Time Remaining ' + curTime)
             elif curMode == 2:
                 timeText.change('Number of Rotations: ' + str(numRotate))
-            
+
+            #clear the incomplete text after a moment
             if loopCounter > 50:
                 loopCounter = 0
                 if not completed:
@@ -703,24 +712,35 @@ class Game:
 
             keystate = pygame.key.get_pressed()
             # Pump PyGame messages.
+            #x is 240
+            
             for e in event.get():
-                if e.type == QUIT or \
-                    (e.type == KEYDOWN and e.key == K_ESCAPE):
-                        return
+                #hit escape to quit
+                if e.type == QUIT or (e.type == KEYDOWN and e.key == K_ESCAPE):
+                    pygame.quit()
                 elif e.type == pygame.VIDEORESIZE:
                     pygame.display.set_mode(e.size, pygame.RESIZABLE)
+
+                #on click of the check answer button
                 if e.type == MOUSEBUTTONDOWN:
                     event.set_grab(1)
                     mousePossible = True
                     if not editMode:
-                        if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
-                                result = Solve(allBlocks)
-                                if result == 'Solved!':
-                                    solved.change('You Win!')
-                                    completed = True
-                                else:
-                                    loopCounter = 0
-                                    solved.change('Incomplete')
+                        if not completed:
+                            #check answer button
+                            if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                                    result = Solve(allBlocks)
+                                    if result == 'Solved!':
+                                        solved.change('You Win!')
+                                        completed = True
+                                    else:
+                                        loopCounter = 0
+                                        solved.change('Incomplete')
+
+                        #main menu button
+                        if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                            mainMenu = MainMenu()
+                    #save custom created board
                     else:
                         if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                             blocksToWrite.append("0")
@@ -740,24 +760,33 @@ class Game:
                             f = open("boards" + os.sep + boardName + ".txt", 'w')
                             for line in blocksToWrite:
                                 f.write(line + "\n")
+                            f.close()
                                 
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
                 if e.type == KEYDOWN:
                     if(e.key == K_SPACE) or (e.key == K_KP3):
                         event.set_grab(1)
+                #on click of the check answer button if done with keyboard
                 elif e.type == KEYUP:
                     if(e.key == K_SPACE) or (e.key == K_KP3):
                         event.set_grab(0)
                         if not editMode:
-                            if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
-                                result = Solve(allBlocks)
-                                if result == 'Solved!':
-                                    solved.change('You Win!')
-                                    completed = True
-                                else:
-                                    loopCounter = 0
-                                    solved.change('Incomplete')
+                            if not completed:
+                            #check answer button
+                                if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                                        result = Solve(allBlocks)
+                                        if result == 'Solved!':
+                                            solved.change('You Win!')
+                                            completed = True
+                                        else:
+                                            loopCounter = 0
+                                            solved.change('Incomplete')
+
+                            #main menu button
+                            if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                                mainMenu = MainMenu()
+                        #save custom created board
                         else:
                             if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                                 blocksToWrite.append("0")
@@ -777,14 +806,10 @@ class Game:
                                 f = open("boards" + os.sep + boardName + ".txt", 'w')
                                 for line in blocksToWrite:
                                     f.write(line + "\n")
+                                f.close()
                                         #X Y N S W E
                                 #print (str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
 
-            
-            #if keystate[K_b]:
-               # pygame.mixer.music.play()
-            # for key test use keystate[key] and a return of true will occur when key down
-            
 
             #for block in blocks:
             x = cursor.rect.x
@@ -805,13 +830,14 @@ class Game:
                 cursor.move(2)
                 mousePossible = False
                 
-            #cursor.grab(mouse.get_pos())
+            #let cursor follow mouse again
             if mousePossible == True:
                 cursor.mouseMoved(mouse.get_pos())
             
             if not (keystate[K_KP1] or keystate[K_RETURN]):
                 keyDown = False
 
+            #main game logic. drag and drop, snap to grid, rotation
             if not editMode and not completed:
                 for block in allBlocks:
                     #Block rotation when pressing enter
@@ -843,6 +869,7 @@ class Game:
                                 break
                         elif block.isMoving == True and (curMode == 1 or curMode == 3):
                             block.grab([cursor.rect.x, cursor.rect.y])
+                    #snapping to grid
                     elif isRan == 1 and block.isLast == 1:
                         for piece in gridpos:
                             if cursor.rect.x > piece[0] and cursor.rect.x < piece[0]+108 and cursor.rect.y > piece[1] and cursor.rect.y < piece[1]+108 and block.isMoving == True and (curMode == 1 or curMode == 3):
@@ -850,6 +877,7 @@ class Game:
                                 isLast.grab(place)
                                 isRan = 0
                         block.setGrabbed(False)
+            #board editor
             elif editMode:
                 if event.get_grab():
                     for block in allBlocks:
@@ -864,6 +892,23 @@ class Game:
 
             # note random here is random.random()
             # note foreach here is for object in
+            allsprites.update()
+            allsprites.draw(screen)
+            pygame.display.flip()
+            
+            if completed and name == 'null':
+                wName = load_image('winName.png')
+                screen.blit(wName,(374,231))
+                name = ask(self.screen, "Name", 400, 382, 300, 30, 42, False, 8)
+
+                highScores[4] = highScores[3]
+                highScores[3] = highScores[2]
+                highScores[2] = highScores[1]
+                highScores[1] = highScores[0]
+                highScores[0] = name + ' ' + curTime
+                scores = open("scores" + os.sep + "timeRecent.txt", 'w')
+                scores.write(name)
+                scores.close()
             
             allsprites.update()
             screen.blit(background, (0,0))
@@ -945,16 +990,15 @@ class MainMenu():
 
 
         pygame.display.set_caption('Blocku')
-        self.menuImg = load_image('bg.png').convert()
-        #self.background = load_image('background.png')
-        self.instImg = load_image('instructions.png').convert()
-        self.menuWI = load_image('menuWithInst.png').convert()
-        self.subAdd = load_image('subAdd.png').convert()
-        self.gModes = load_image('modesMain.png').convert()
-        self.hi = load_image('hilite.png').convert()
-        self.leftArrow = load_image('left.png').convert()
-        self.rightArrow = load_image('right.png').convert()
-        self.button = load_image('button.png').convert()
+        self.menuImg = load_image('bg.png')
+        self.instImg = load_image('instructions.png')
+        self.menuWI = load_image('menuWithInst.png')
+        self.subAdd = load_image('subAdd.png')
+        self.gModes = load_image('modesMain.png')
+        self.hi = load_image('hilite.png')
+        self.leftArrow = load_image('left.png')
+        self.rightArrow = load_image('right.png')
+        self.button = load_image('button.png')
 
         if pygame.font:
             self.selRng = Text('',575,400,'black',42)
@@ -970,7 +1014,7 @@ class MainMenu():
         screen.blit(self.menuImg, (0,0))
 
         text = pygame.font.Font(None, 42)
-        self.welp = self.wrapline('Goal: position the blocks so that the numbers which are next to each other solve the given equation.      Controls: Use the mouse or Game Buttons to drag and drop the blocks. Use the return key to rotate, or the checkmark button.',text,500)
+        self.welp = self.wrapline('Use the mouse or Game keys to move the blocks so that the numbers next to each other solve the objective. Click, spacebar, or Cross to drag, Return or checkmark to rotate.',text,500)
         
         self.addText()
         pygame.display.flip()
@@ -994,7 +1038,7 @@ class MainMenu():
                 stext = n
             l=font.size(stext)[0]
             real=len(stext)               
-            done=0                        
+            done=0
         return real, done, stext             
         
     def wrapline(self, text, font, maxwidth): 
@@ -1045,7 +1089,7 @@ class MainMenu():
 
                 #Story Mode              126,572
                 stryMode = pygame.font.Font(None, 55)
-                stry = stryMode.render("Story Mode",1,(0,0,0))
+                stry = stryMode.render("Custom Game",1,(0,0,0))
                 self.screen.blit(stry,[149,625])
 
             #instructions panel
@@ -1117,8 +1161,9 @@ class MainMenu():
     def loop(self):
         pygame.mouse.set_visible(False)
         cursor = mouseUpdate(mouse.get_pos())
-        allsprites = pygame.sprite.RenderPlain((cursor, self.selRng, self.selDifficulty, self.selSub, self.selRng2, self.selCas))
-        
+        allsprites = pygame.sprite.LayeredUpdates()
+        allsprites.add((self.selRng, self.selDifficulty, self.selSub, self.selRng2, self.selCas))
+        allsprites.add(cursor)
         mousePossible = True
         
         while 1:
@@ -1130,7 +1175,7 @@ class MainMenu():
                 mousePossible = False
             if keystate[K_RIGHT] or keystate[K_KP6]:
                 cursor.move(1)
-                mousePossible= False
+                mousePossible = False
             if keystate[K_UP] or keystate[K_KP8]:
                 cursor.move(0)
                 mousePossible = False
@@ -1148,7 +1193,7 @@ class MainMenu():
             for event in pygame.event.get():
                 if event.type == QUIT or \
                     (event.type == KEYDOWN and event.key == K_ESCAPE):
-                        return
+                        pygame.quit()
                 if event.type == MOUSEBUTTONDOWN:
                     if event.button == 1:
                         mousePossible = True
@@ -1247,18 +1292,22 @@ class MainMenu():
                                 #range left arrow
                                 if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 391 and cursor.rect.y < 433:
                                     self.rangeChange(1)
+                                    print 'range'
 
                                 #range right arrow
                                 if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 391 and cursor.rect.y < 433:
                                     self.rangeChange(2)
+                                    print 'range'
 
                                 #casual left arrow
-                                if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 254 and cursor.rect.y < 496:
+                                if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 254 and cursor.rect.y < 296:
                                     self.casChange()
+                                    print 'casual'
 
                                 #casual right arrow
-                                if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 254 and cursor.rect.y < 496:
+                                if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 254 and cursor.rect.y < 296:
                                     self.casChange()
+                                    print 'casual'
                             else:
                                 numRange = pygame.font.Font(None,42).render("Select Number Range",1,(0,0,0))
                                 self.menuImg.blit(numRange,(526,298))
@@ -1324,7 +1373,7 @@ class MainMenu():
                             #create a board button
                             if cursor.rect.x > 546 and cursor.rect.x < 806 and cursor.rect.y > 215 and cursor.rect.y < 265:
                                 game = Game()
-                                game.run(self.curSel, self.selRange, self.selDiff, self.selSubtraction, 'boardMaker')
+                                game.run(self.curSel, self.selRange, self.selDiff, self.selSubtraction, 'boardMaker', 0)
                                 pygame.quit()
 
 
@@ -1352,7 +1401,7 @@ class MainMenu():
                     if event.type == KEYDOWN and event.key == K_BACKSPACE:
                         self.text = self.text[0:-1]
                     elif event.type == KEYDOWN and event.key == K_RETURN:
-                        print self.text
+                        pass
                     elif event.type == KEYDOWN:
                         self.text += event.unicode.encode("ascii")
                     display_box(self.menuImg,'' + self.text, 529,380, 300, 30, 42)

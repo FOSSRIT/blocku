@@ -39,4 +39,4 @@
 1032 450 0 0 0 0
 1032 558 0 0 0 0
 1032 666 0 0 0 0
-Click on a block to edit it. Leave a block all 0s to remove it in the final board.
+Click on a block to edit it
