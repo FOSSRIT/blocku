@@ -533,7 +533,7 @@ class Game:
         gridpos = GenerateGrid(allBlocks)
         if not editMode:
             if curMode == 1 or curMode == 3:
-                #Randomize(allBlocks)
+                Randomize(allBlocks)
                 if curMode == 3 and dif == 2:
                     for block in allBlocks:
                         for i in range(0, random.randint(1, 6)):
