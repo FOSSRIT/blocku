@@ -574,11 +574,11 @@ class Game:
             toMenu = font.render("Main Menu", 1, (0,0,0))
             if curMode == 2:
                 goal = font.render("Try to beat:", 1, (0,0,0))
-            elif curMode == 1:
+            elif curMode == 1 or curMode == 3:
                 goal = font.render("Recent Times:", 1, (0,0,0))
+                
             if not editMode:
-                if not curMode == 3:
-                    background.blit(goal,[20,200])
+                background.blit(goal,[20,200])
                 check = font.render("Check Answer", 1, (0,0,0))
             else:
                 check = font.render("Save board", 1, (0,0,0))
@@ -589,13 +589,17 @@ class Game:
         highScores = []
 
         #high scores
-        if curMode == 1:
-            ff = open("scores" + os.sep + "timeRecent.txt", 'r')
-            for line in ff:
-                highScores.append(line)
+        if not curMode == 2:
+            if curMode == 1:
+                ff = open("scores" + os.sep + "timeRecent.txt", 'r')
+            else:
+                ff = open("scores" + os.sep + name + "Scores.txt", 'r')
+            for i in range(5):
+                highScores.append(ff.readline())
             for i in range(len(highScores)):
+                highScores[i] = highScores[i][0:-1]
                 rec = font.render(highScores[i],1,(0,0,0))
-                background.blit(rec,[25,240+(30*i)])
+                background.blit(rec,[25,240+(40*i)])
 
         elif curMode == 2:
             puzGoal.change(str(numRotateTotal) + ' rotations')
@@ -632,7 +636,7 @@ class Game:
         keyDown = False
         mins = 0
         numRotate = 0
-        name = 'null'
+        nname = 'null'
 
         #if goign against time, set up time limits
         if cas == 0:
@@ -648,6 +652,8 @@ class Game:
             elif dif == 4:
                 mins = 23
                 timer = 59
+            origMin = mins
+            origSec = timer
 
         #for block editing
         n = 0
@@ -672,7 +678,7 @@ class Game:
             if timer < 10:
                 emptySec = '0'
             
-            if curMode == 1 and cas == 1:
+            if not curMode == 2 and cas == 1:
                 if not completed:
                     counter += 1
                     if counter > 30:
@@ -683,7 +689,7 @@ class Game:
                         timer = 0
                 curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
                 timeText.change('Time Elapsed ' + curTime)
-            elif curMode == 1 and cas == 0:
+            elif not curMode == 2 and cas == 0:
                 #dif 1 2 3 4
                 if not completed:
                     counter += 1
@@ -896,19 +902,49 @@ class Game:
             allsprites.draw(screen)
             pygame.display.flip()
             
-            if completed and name == 'null':
+            if completed and nname == 'null':
                 wName = load_image('winName.png')
                 screen.blit(wName,(374,231))
-                name = ask(self.screen, "Name", 400, 382, 300, 30, 42, False, 8)
+                nname = ask(self.screen, "Name", 400, 382, 300, 30, 42, False, 8)
 
-                highScores[4] = highScores[3]
-                highScores[3] = highScores[2]
-                highScores[2] = highScores[1]
-                highScores[1] = highScores[0]
-                highScores[0] = name + ' ' + curTime
-                scores = open("scores" + os.sep + "timeRecent.txt", 'w')
-                scores.write(name)
-                scores.close()
+                """if cas == 0:
+            if dif == 1:
+                mins = 5
+                timer = 59
+            elif dif == 2:
+                mins = 11
+                timer = 59
+            elif dif == 3:
+                mins = 17
+                timer = 59
+            elif dif == 4:
+                mins = 23
+                timer = 59"""
+                if not curMode == 2:
+                    highScores[4] = highScores[3]
+                    highScores[3] = highScores[2]
+                    highScores[2] = highScores[1]
+                    highScores[1] = highScores[0]
+                    if cas == 1:
+                        highScores[0] = nname + ' ' + curTime
+                    else:
+                        mins = origMin - mins
+                        timer = origSec - timer
+                        if mins < 10:
+                            mins = str("0" + str(mins))
+                        if timer < 10:
+                            timer = str("0" + str(timer))
+                        mins = str(mins)
+                        timer = str(timer)
+                        curTime = mins + ":" + timer
+                        highScores[0] = nname + ' ' + curTime
+                    if curMode == 1:
+                        scores = open("scores" + os.sep + "timeRecent.txt", 'w')
+                    elif curMode == 3:
+                        scores = open("scores" + os.sep + name + "Scores.txt", 'w')
+                    for score in highScores:
+                        scores.write(score + '\n')
+                    scores.close()
             
             allsprites.update()
             screen.blit(background, (0,0))
@@ -1382,6 +1418,11 @@ class MainMenu():
                             if self.curSel == 3:
                                 if os.path.isfile(os.path.join(os.getcwd(),"boards" + os.sep + self.text + ".txt")):
                                     self.goodLoad = True
+                                    if not os.path.isfile("scores" + os.sep + self.text + ".txt"):
+                                        ff = file("scores" + os.sep + self.text + "Scores.txt", 'a')
+                                        for i in range(4):
+                                            ff.write("Kaeedo 0:42\n")
+                                        ff.close()
                                 else:
                                     self.goodLoad = False
                                     self.text = 'File does not exist'
