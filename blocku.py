@@ -700,7 +700,8 @@ class Game:
                         mins -= 1
                         timer = 59
                 curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
-                timeText.change('Time Remaining ' + curTime)
+                if not completed:
+                    timeText.change('Time Remaining ' + curTime)
             elif curMode == 2:
                 timeText.change('Number of Rotations: ' + str(numRotate))
 
@@ -907,19 +908,6 @@ class Game:
                 screen.blit(wName,(374,231))
                 nname = ask(self.screen, "Name", 400, 382, 300, 30, 42, False, 8)
 
-                """if cas == 0:
-            if dif == 1:
-                mins = 5
-                timer = 59
-            elif dif == 2:
-                mins = 11
-                timer = 59
-            elif dif == 3:
-                mins = 17
-                timer = 59
-            elif dif == 4:
-                mins = 23
-                timer = 59"""
                 if not curMode == 2:
                     highScores[4] = highScores[3]
                     highScores[3] = highScores[2]
@@ -929,7 +917,7 @@ class Game:
                         highScores[0] = nname + ' ' + curTime
                     else:
                         mins = origMin - mins
-                        timer = origSec - timer
+                        timer = origSec - timer + 1
                         if mins < 10:
                             mins = str("0" + str(mins))
                         if timer < 10:
@@ -938,6 +926,7 @@ class Game:
                         timer = str(timer)
                         curTime = mins + ":" + timer
                         highScores[0] = nname + ' ' + curTime
+                        timeText.change('Time Taken  ' + curTime)
                     if curMode == 1:
                         scores = open("scores" + os.sep + "timeRecent.txt", 'w')
                     elif curMode == 3:
