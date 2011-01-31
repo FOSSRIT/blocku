@@ -889,7 +889,7 @@ class Game:
                 if event.get_grab():
                     for block in allBlocks:
                         if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
-                            #Edit North
+                            #Edit each side individually
                             n = ask(self.screen, "Enter North", 529, 10, 300, 30, 42, True, 6)
                             east = ask(self.screen, "Enter East", 529, 10, 300, 30, 42, True, 6)
                             s = ask(self.screen, "Enter South", 529, 10, 300, 30, 42, True, 6)
@@ -909,12 +909,14 @@ class Game:
                 nname = ask(self.screen, "Name", 400, 382, 300, 30, 42, False, 8)
 
                 if not curMode == 2:
+                    #rewrites the highscores so most recent is at top, and only 5 total are ever written
                     highScores[4] = highScores[3]
                     highScores[3] = highScores[2]
                     highScores[2] = highScores[1]
                     highScores[1] = highScores[0]
                     if cas == 1:
                         highScores[0] = nname + ' ' + curTime
+                    #if against time, calculate time taken, and add leading zeroes if necessary
                     else:
                         mins = origMin - mins
                         timer = origSec - timer + 1
@@ -934,7 +936,8 @@ class Game:
                     for score in highScores:
                         scores.write(score + '\n')
                     scores.close()
-            
+
+            #update everything
             allsprites.update()
             screen.blit(background, (0,0))
             allsprites.draw(screen)

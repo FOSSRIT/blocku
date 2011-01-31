@@ -1,6 +1,7 @@
 [Activity]
-name = Blocku
-service_name = org.sugarlabs.Blocku
-class = blocku_activity.BlockuActivity
-icon = blocku
+name = Blocku 
 activity_version = 1
+host_version = 1
+service_name = edu.rit.foss.blocku
+icon = blocku
+exec = sugar-activity activity.VteActivity
