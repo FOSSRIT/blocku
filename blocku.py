@@ -589,20 +589,21 @@ class Game:
         highScores = []
 
         #high scores
-        if not curMode == 2:
-            if curMode == 1:
-                ff = open("scores" + os.sep + "timeRecent.txt", 'r')
-            else:
-                ff = open("scores" + os.sep + name + "Scores.txt", 'r')
-            for i in range(5):
-                highScores.append(ff.readline())
-            for i in range(len(highScores)):
-                highScores[i] = highScores[i][0:-1]
-                rec = font.render(highScores[i],1,(0,0,0))
-                background.blit(rec,[25,240+(40*i)])
+        if not editMode:
+            if not curMode == 2:
+                if curMode == 1:
+                    ff = open("scores" + os.sep + "timeRecent.txt", 'r')
+                else:
+                    ff = open("scores" + os.sep + name + "Scores.txt", 'r')
+                for i in range(5):
+                    highScores.append(ff.readline())
+                for i in range(len(highScores)):
+                    highScores[i] = highScores[i][0:-1]
+                    rec = font.render(highScores[i],1,(0,0,0))
+                    background.blit(rec,[25,240+(40*i)])
 
-        elif curMode == 2:
-            puzGoal.change(str(numRotateTotal) + ' rotations')
+            elif curMode == 2:
+                puzGoal.change(str(numRotateTotal) + ' rotations')
 
         #actually displays everything
         allsprites = pygame.sprite.LayeredUpdates()
@@ -744,9 +745,7 @@ class Game:
                                         loopCounter = 0
                                         solved.change('Incomplete')
 
-                        #main menu button
-                        if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
-                            mainMenu = MainMenu()
+                       
                     #save custom created board
                     else:
                         if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
@@ -768,6 +767,9 @@ class Game:
                             for line in blocksToWrite:
                                 f.write(line + "\n")
                             f.close()
+                     #main menu button
+                    if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                        mainMenu = MainMenu()
                                 
                 elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
@@ -790,9 +792,7 @@ class Game:
                                             loopCounter = 0
                                             solved.change('Incomplete')
 
-                            #main menu button
-                            if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
-                                mainMenu = MainMenu()
+                            
                         #save custom created board
                         else:
                             if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
@@ -815,7 +815,9 @@ class Game:
                                     f.write(line + "\n")
                                 f.close()
                                         #X Y N S W E
-                                #print (str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
+                       #main menu button
+                        if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                            mainMenu = MainMenu()
 
 
             #for block in blocks:
@@ -1410,8 +1412,8 @@ class MainMenu():
                             if self.curSel == 3:
                                 if os.path.isfile(os.path.join(os.getcwd(),"boards" + os.sep + self.text + ".txt")):
                                     self.goodLoad = True
-                                    if not os.path.isfile("scores" + os.sep + self.text + ".txt"):
-                                        ff = file("scores" + os.sep + self.text + "Scores.txt", 'a')
+                                    if not os.path.isfile("scores" + os.sep + self.text + "Scores.txt"):
+                                        ff = file("scores" + os.sep + self.text + "Scores.txt", 'w')
                                         for i in range(4):
                                             ff.write("Kaeedo 0:42\n")
                                         ff.close()
