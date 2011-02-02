@@ -244,14 +244,14 @@ def Randomize(blocks):
         block.rect.y = random.randint(200, 700)
 
 # read in a board called testFile.txt
-def LoadBoard(nm):
+def LoadBoard(nm, directory='boards'):
     # File format:
     # ---------------
     # Number of blocks in board
     # X-Pos Y-Pos N S W E
     # NSWE = directions
     try:
-        file = open("boards" + os.sep + nm + ".txt", "r")
+        file = open(directory + os.sep + nm + ".txt", "r")
         numLines = file.readline()
         #print(numLines)
         blocks = list([] for i in range(int(numLines)))
@@ -526,9 +526,12 @@ class Game:
                         for i in range(0, random.randint(1, 6)):
                             block.rotate()
         else:
-            allBlocks = LoadBoard(name)
             if name == 'boardMaker':
                 editMode = True
+                allBlocks = LoadBoard(name, 'data')
+            else:
+                allBlocks = LoadBoard(name)
+            
             
         gridpos = GenerateGrid(allBlocks)
         if not editMode:
@@ -678,33 +681,34 @@ class Game:
                 emptyMin = '0'
             if timer < 10:
                 emptySec = '0'
-            
-            if not curMode == 2 and cas == 1:
-                if not completed:
-                    counter += 1
-                    if counter > 30:
-                        timer += 1
-                        counter = 0
-                    if timer > 59:
-                        mins += 1
-                        timer = 0
-                curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
-                timeText.change('Time Elapsed ' + curTime)
-            elif not curMode == 2 and cas == 0:
-                #dif 1 2 3 4
-                if not completed:
-                    counter += 1
-                    if counter > 30:
-                        timer -= 1
-                        counter = 0
-                    if timer < 0:
-                        mins -= 1
-                        timer = 59
-                curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
-                if not completed:
-                    timeText.change('Time Remaining ' + curTime)
-            elif curMode == 2:
-                timeText.change('Number of Rotations: ' + str(numRotate))
+
+            if not editMode:
+                if not curMode == 2 and cas == 1:
+                    if not completed:
+                        counter += 1
+                        if counter > 30:
+                            timer += 1
+                            counter = 0
+                        if timer > 59:
+                            mins += 1
+                            timer = 0
+                    curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
+                    timeText.change('Time Elapsed ' + curTime)
+                elif not curMode == 2 and cas == 0:
+                    #dif 1 2 3 4
+                    if not completed:
+                        counter += 1
+                        if counter > 30:
+                            timer -= 1
+                            counter = 0
+                        if timer < 0:
+                            mins -= 1
+                            timer = 59
+                    curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
+                    if not completed:
+                        timeText.change('Time Remaining ' + curTime)
+                elif curMode == 2:
+                    timeText.change('Number of Rotations: ' + str(numRotate))
 
             #clear the incomplete text after a moment
             if loopCounter > 50:
@@ -762,7 +766,9 @@ class Game:
                                     numBlocks += 1
                             blocksToWrite[0] = str(numBlocks)
                             blocksToWrite.append(objText)
-                                #blocksToWrite.append(boardName)
+                            temp = open("data" + os.sep + "boardList.txt", 'a')
+                            temp.write(boardName + "\n")
+                            temp.close()
                             f = open("boards" + os.sep + boardName + ".txt", 'w')
                             for line in blocksToWrite:
                                 f.write(line + "\n")
@@ -771,7 +777,7 @@ class Game:
                     if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
                         mainMenu = MainMenu()
                                 
-                elif e.type == MOUSEBUTTONUP:
+                elif not e.type == MOUSEBUTTONDOWN:
                     event.set_grab(0)
                 if e.type == KEYDOWN:
                     if(e.key == K_SPACE) or (e.key == K_KP3):
@@ -810,6 +816,9 @@ class Game:
                                 blocksToWrite[0] = str(numBlocks)
                                 blocksToWrite.append(objText)
                                 #blocksToWrite.append(boardName)
+                                temp = open("data" + os.sep + "boardList.txt", 'a')
+                                temp.write(boardName + "\n")
+                                temp.close()
                                 f = open("boards" + os.sep + boardName + ".txt", 'w')
                                 for line in blocksToWrite:
                                     f.write(line + "\n")
@@ -892,10 +901,10 @@ class Game:
                     for block in allBlocks:
                         if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
                             #Edit each side individually
-                            n = ask(self.screen, "Enter North", 529, 10, 300, 30, 42, True, 6)
-                            east = ask(self.screen, "Enter East", 529, 10, 300, 30, 42, True, 6)
-                            s = ask(self.screen, "Enter South", 529, 10, 300, 30, 42, True, 6)
-                            w = ask(self.screen, "Enter West", 529, 10, 300, 30, 42, True, 6)
+                            n = ask(self.screen, "Enter North", 529, 30, 300, 30, 42, True, 6)
+                            east = ask(self.screen, "Enter East", 529, 30, 300, 30, 42, True, 6)
+                            s = ask(self.screen, "Enter South", 529, 30, 300, 30, 42, True, 6)
+                            w = ask(self.screen, "Enter West", 529, 30, 300, 30, 42, True, 6)
                             block.edit(n,east,s,w)
                             event.set_grab(0)
 
@@ -1009,6 +1018,8 @@ class MainMenu():
     cas = 1
     text = ""
     goodLoad = False
+    boardList = []
+    listCounter = 0
     def __init__(self):
         self.paused = False
         self.clock = pygame.time.Clock()
@@ -1018,6 +1029,11 @@ class MainMenu():
         bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
         screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
 
+        ff = file('data' + os.sep + 'boardList.txt', 'r')
+        temp = ff.read()
+        self.boardList = temp.split('\n')
+
+        self.text = self.boardList[0]
 
         pygame.display.set_caption('Blocku')
         self.menuImg = load_image('bg.png')
@@ -1188,6 +1204,19 @@ class MainMenu():
         else:
             self.cas = 0
 
+    def fileChange(self, change):
+        if change == 0:
+            self.listCounter -= 1
+        else:
+            self.listCounter += 1
+
+        if self.listCounter > (len(self.boardList) - 2):
+            self.listCounter = 0
+        if self.listCounter < 0:
+            self.listCounter = len(self.boardList) - 2
+
+        self.text = self.boardList[self.listCounter]
+
     def loop(self):
         pygame.mouse.set_visible(False)
         cursor = mouseUpdate(mouse.get_pos())
@@ -1322,22 +1351,18 @@ class MainMenu():
                                 #range left arrow
                                 if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 391 and cursor.rect.y < 433:
                                     self.rangeChange(1)
-                                    print 'range'
 
                                 #range right arrow
                                 if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 391 and cursor.rect.y < 433:
                                     self.rangeChange(2)
-                                    print 'range'
 
                                 #casual left arrow
                                 if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 254 and cursor.rect.y < 296:
                                     self.casChange()
-                                    print 'casual'
 
                                 #casual right arrow
                                 if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 254 and cursor.rect.y < 296:
                                     self.casChange()
-                                    print 'casual'
                             else:
                                 numRange = pygame.font.Font(None,42).render("Select Number Range",1,(0,0,0))
                                 self.menuImg.blit(numRange,(526,298))
@@ -1379,8 +1404,14 @@ class MainMenu():
                         #click on story mode
                         if self.curSel == 3:
 
+                            #difficulty buttons
                             self.menuImg.blit(self.leftArrow,(529,543))
                             self.menuImg.blit(self.rightArrow,(909,543))
+
+                            #board name buttons
+                            self.menuImg.blit(self.leftArrow,(529,375))
+                            self.menuImg.blit(self.rightArrow,(909,375))
+                            
                             self.menuImg.blit(self.button,(546,215))
                             
                             difficulty = pygame.font.Font(None,42).render("Select Difficulty",1,(0,0,0))
@@ -1399,6 +1430,16 @@ class MainMenu():
                             #difficulty right arrow
                             if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 543 and cursor.rect.y < 585:
                                 self.diffChange(2)
+
+                            #board left
+                            if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 375 and cursor.rect.y < 417:
+                                #next in array
+                                self.fileChange(0)
+
+                            #board right
+                            if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 375 and cursor.rect.y < 417:
+                                #next in array
+                                self.fileChange(1)
 
                             #create a board button
                             if cursor.rect.x > 546 and cursor.rect.x < 806 and cursor.rect.y > 215 and cursor.rect.y < 265:
@@ -1439,7 +1480,7 @@ class MainMenu():
                         pass
                     elif event.type == KEYDOWN:
                         self.text += event.unicode.encode("ascii")
-                    display_box(self.menuImg,'' + self.text, 529,380, 300, 30, 42)
+                    display_box(self.menuImg,'' + self.text, 575,380, 300, 30, 42)
 
                 #display defaults
                 if self.selSubtraction == 0 and self.modeBool == True and (self.curSel == 1 or self.curSel == 2):
