@@ -53,7 +53,7 @@ def display_box(screen, message, x, y, w, h, size):
 	
 	pygame.display.flip()
 
-def ask(screen, question, x, y, w, h, size, numOnly, limit):
+def ask(screen, question, x, y, w, h, size, numOnly, limit, allow=True):
     pygame.font.init()  
     text = ""
     display_box(screen, question + ": " + text,x,y,w,h,size)
@@ -71,6 +71,8 @@ def ask(screen, question, x, y, w, h, size, numOnly, limit):
                 text = text[0:-1]
             elif event.key == K_RETURN:
                 break
+            elif event.key == K_SPACE and not allow:
+                continue
             elif len(text) < limit:
                 text += event.unicode.encode("ascii")
         else:
@@ -754,7 +756,7 @@ class Game:
                     else:
                         if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                             blocksToWrite.append("0")
-                            boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10)
+                            boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10, False)
                             allsprites.update()
                             screen.blit(background, (0,0))
                             allsprites.draw(screen)
@@ -777,7 +779,7 @@ class Game:
                     if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
                         mainMenu = MainMenu()
                                 
-                elif not e.type == MOUSEBUTTONDOWN:
+                elif e.type == MOUSEBUTTONUP:
                     event.set_grab(0)
                 if e.type == KEYDOWN:
                     if(e.key == K_SPACE) or (e.key == K_KP3):
@@ -803,7 +805,7 @@ class Game:
                         else:
                             if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                                 blocksToWrite.append("0")
-                                boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10)
+                                boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10, False)
                                 allsprites.update()
                                 screen.blit(background, (0,0))
                                 allsprites.draw(screen)
@@ -1029,10 +1031,7 @@ class MainMenu():
         bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
         screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
 
-        ff = file('data' + os.sep + 'boardList.txt', 'r')
-        temp = ff.read()
-        self.boardList = temp.split('\n')
-
+        self.loadList()
         self.text = self.boardList[0]
 
         pygame.display.set_caption('Blocku')
@@ -1045,6 +1044,7 @@ class MainMenu():
         self.leftArrow = load_image('left.png')
         self.rightArrow = load_image('right.png')
         self.button = load_image('button.png')
+        self.delButton = load_image('del.png')
 
         if pygame.font:
             self.selRng = Text('',575,400,'black',42)
@@ -1065,6 +1065,11 @@ class MainMenu():
         self.addText()
         pygame.display.flip()
         self.loop()
+
+    def loadList(self):
+        ff = file('data' + os.sep + 'boardList.txt', 'r')
+        temp = ff.read()
+        self.boardList = temp.split('\n')
 
     def truncline(self, text, font, maxwidth):
         real=len(text)       
@@ -1422,6 +1427,11 @@ class MainMenu():
 
                             createText = pygame.font.Font(None,42).render("Create a board",1,(0,0,0))
                             self.menuImg.blit(createText,(570,225))
+
+                            #delete button
+                            delText = pygame.font.Font(None,40).render("Delete",1,(0,0,0))
+                            self.menuImg.blit(self.delButton,(981,371))
+                            self.menuImg.blit(delText,(985,380))
                             
                             #difficulty left arrow
                             if cursor.rect.x > 529 and cursor.rect.x < 554 and cursor.rect.y > 543 and cursor.rect.y < 585:
@@ -1441,6 +1451,13 @@ class MainMenu():
                                 #next in array
                                 self.fileChange(1)
 
+                            #delete button
+                            if cursor.rect.x > 981 and cursor.rect.x < 1095 and cursor.rect.y > 371 and cursor.rect.y < 418:
+                                os.remove("boards" + os.sep + self.text + ".txt")
+                                if os.path.isfile("scores" + os.sep + self.text + "Scores.txt"):
+                                    os.remove("scores" + os.sep + self.text + "Scores.txt")
+                                self.fileChange(1)
+
                             #create a board button
                             if cursor.rect.x > 546 and cursor.rect.x < 806 and cursor.rect.y > 215 and cursor.rect.y < 265:
                                 game = Game()
@@ -1451,7 +1468,7 @@ class MainMenu():
                         #close gModes KEEP THIS LAST
                         if cursor.rect.x > 980 and cursor.rect.x < 1094 and cursor.rect.y > 684 and cursor.rect.y < 728:
                             if self.curSel == 3:
-                                if os.path.isfile(os.path.join(os.getcwd(),"boards" + os.sep + self.text + ".txt")):
+                                if os.path.isfile("boards" + os.sep + self.text + ".txt"):
                                     self.goodLoad = True
                                     if not os.path.isfile("scores" + os.sep + self.text + "Scores.txt"):
                                         ff = file("scores" + os.sep + self.text + "Scores.txt", 'w')
@@ -1476,7 +1493,7 @@ class MainMenu():
                 if self.curSel == 3 and self.modeBool == True:
                     if event.type == KEYDOWN and event.key == K_BACKSPACE:
                         self.text = self.text[0:-1]
-                    elif event.type == KEYDOWN and event.key == K_RETURN:
+                    elif event.type == KEYDOWN and (event.key == K_RETURN or event.key == K_SPACE):
                         pass
                     elif event.type == KEYDOWN:
                         self.text += event.unicode.encode("ascii")
