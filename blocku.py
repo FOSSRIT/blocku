@@ -272,13 +272,13 @@ def LoadBoard(nm, directory='boards'):
 
 
 # Will grab the last line of the file
-def LastLine(nm):
+def LastLine(nm, directory='boards'):
     try:
-        file = open("boards" + os.sep + nm + ".txt", 'rU')
+        file = open(directory + os.sep + nm + ".txt", 'r')
         lines = file.readlines()
         file.close()
     except:
-        lines = 'Solve for: X + Y = 61'
+        lines = 'Solve for: X + Y = 42'
 
     return lines[len(lines)-1]
 
@@ -555,7 +555,10 @@ class Game:
             objective = Text('',253,174,'black',46)
             if sub == 0:
                 if curMode == 3:
-                    objective.change(LastLine(name))
+                    if name == 'boardMaker':
+                        objective.change(LastLine(name,'data'))
+                    else:
+                        objective.change(LastLine(name))
                 elif curMode == 1 and dif < 3:
                      objective.change('Arrange blocks so that addition equals ' + str(answer))
                 elif curMode == 1 and dif > 2:
@@ -564,7 +567,10 @@ class Game:
                     objective.change('Rotate blocks so that addition equals ' + str(answer))
             else:
                 if curMode == 3:
-                    objective.change(LastLine(name))
+                    if name == 'boardMaker':
+                        objective.change(LastLine(name,'data'))
+                    else:
+                        objective.change(LastLine(name))
                 elif curMode == 1 and dif < 3:
                      objective.change('Arrange blocks so that subtraction equals ' + str(answer))
                 elif curMode == 1 and dif > 2:
@@ -606,6 +612,7 @@ class Game:
                     highScores[i] = highScores[i][0:-1]
                     rec = font.render(highScores[i],1,(0,0,0))
                     background.blit(rec,[25,240+(40*i)])
+                ff.close()
 
             elif curMode == 2:
                 puzGoal.change(str(numRotateTotal) + ' rotations')
@@ -667,11 +674,11 @@ class Game:
         s = 0
         w = 0
 
-        #for block writing
-        numBlocks = 0
-        blocksToWrite = []
-        
         while 1:
+            #for block writing
+            numBlocks = 0
+            blocksToWrite = []
+        
             loopCounter += 1
             #timer code
 
@@ -755,26 +762,31 @@ class Game:
                     #save custom created board
                     else:
                         if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
-                            blocksToWrite.append("0")
-                            boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10, False)
-                            allsprites.update()
-                            screen.blit(background, (0,0))
-                            allsprites.draw(screen)
-                            pygame.display.flip()
-                            objText = ask(self.screen, "Enter Objective Text", 250, 10, 750, 30, 30, False, 60)
                             for block in allBlocks:
                                 if int(block.north) != 0 and int(block.east) != 0 and int(block.south) != 0 and int(block.west) != 0:
                                     blocksToWrite.append(str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
                                     numBlocks += 1
-                            blocksToWrite[0] = str(numBlocks)
-                            blocksToWrite.append(objText)
-                            temp = open("data" + os.sep + "boardList.txt", 'a')
-                            temp.write(boardName + "\n")
-                            temp.close()
-                            f = open("boards" + os.sep + boardName + ".txt", 'w')
-                            for line in blocksToWrite:
-                                f.write(line + "\n")
-                            f.close()
+                            if numBlocks > 0:
+                                blocksToWrite.append("0")
+                                boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10, False)
+                                allsprites.update()
+                                screen.blit(background, (0,0))
+                                allsprites.draw(screen)
+                                pygame.display.flip()
+                                objText = ask(self.screen, "Enter Objective Text", 250, 10, 750, 30, 30, False, 60)
+                                
+                                blocksToWrite[0] = str(numBlocks)
+                                blocksToWrite.append(objText)
+                                temp = open("data" + os.sep + "boardList.txt", 'a')
+                                temp.write(boardName + "\n")
+                                temp.close()
+                                f = open("boards" + os.sep + boardName + ".txt", 'w')
+                                for line in blocksToWrite:
+                                    f.write(line + "\n")
+                                f.close()
+                            else:
+                                timeText.change("Make at least one block")
+                                
                      #main menu button
                     if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
                         mainMenu = MainMenu()
@@ -803,7 +815,11 @@ class Game:
                             
                         #save custom created board
                         else:
-                            if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
+                            for block in allBlocks:
+                                if int(block.north) != 0 and int(block.east) != 0 and int(block.south) != 0 and int(block.west) != 0:
+                                    blocksToWrite.append(str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
+                                    numBlocks += 1
+                            if numBlocks > 0:
                                 blocksToWrite.append("0")
                                 boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10, False)
                                 allsprites.update()
@@ -811,13 +827,9 @@ class Game:
                                 allsprites.draw(screen)
                                 pygame.display.flip()
                                 objText = ask(self.screen, "Enter Objective Text", 250, 10, 750, 30, 30, False, 60)
-                                for block in allBlocks:
-                                    if int(block.north) != 0 and int(block.east) != 0 and int(block.south) != 0 and int(block.west) != 0:
-                                        blocksToWrite.append(str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
-                                        numBlocks += 1
+                                
                                 blocksToWrite[0] = str(numBlocks)
                                 blocksToWrite.append(objText)
-                                #blocksToWrite.append(boardName)
                                 temp = open("data" + os.sep + "boardList.txt", 'a')
                                 temp.write(boardName + "\n")
                                 temp.close()
@@ -825,7 +837,8 @@ class Game:
                                 for line in blocksToWrite:
                                     f.write(line + "\n")
                                 f.close()
-                                        #X Y N S W E
+                            else:
+                                timeText.change("Make at least one block")
                        #main menu button
                         if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
                             mainMenu = MainMenu()
@@ -902,6 +915,7 @@ class Game:
                 if event.get_grab():
                     for block in allBlocks:
                         if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
+                            timeText.change('')
                             #Edit each side individually
                             n = ask(self.screen, "Enter North", 529, 30, 300, 30, 42, True, 6)
                             east = ask(self.screen, "Enter East", 529, 30, 300, 30, 42, True, 6)
@@ -1453,9 +1467,16 @@ class MainMenu():
 
                             #delete button
                             if cursor.rect.x > 981 and cursor.rect.x < 1095 and cursor.rect.y > 371 and cursor.rect.y < 418:
+                                tempList = self.boardList
+                                toDeleteFile = file('data' + os.sep + 'boardList.txt', 'w')
+                                for i in range(len(self.boardList)-1):
+                                    if not self.boardList[i] == self.text:
+                                        toDeleteFile.write(self.boardList[i]+'\n')
+                                toDeleteFile.close()
                                 os.remove("boards" + os.sep + self.text + ".txt")
                                 if os.path.isfile("scores" + os.sep + self.text + "Scores.txt"):
                                     os.remove("scores" + os.sep + self.text + "Scores.txt")
+                                self.loadList()
                                 self.fileChange(1)
 
                             #create a board button
