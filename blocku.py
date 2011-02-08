@@ -406,6 +406,24 @@ class Block(pygame.sprite.Sprite):
         self.south = self.west
         self.west = temp
 
+class Highlight(pygame.sprite.Sprite):
+    def __init__(self,x=1300,y=1000):
+        pygame.sprite.Sprite.__init__(self)
+        img = load_image('hilite.png',True)
+        self.image = img
+        screen = pygame.display.get_surface()
+        self.area = screen.get_rect()
+        self.rect = pygame.Rect(x,y,120,120)
+
+    def setpos(self, pos):
+        x, y = pos;
+        globX=x
+        globY=y
+        #remember the offset here is 48 as this will center the mouse in our 120 pixel image
+        newPos = self.rect.move((x,y))
+        self.rect.left = x-12
+        self.rect.top = y-12
+
 #the main game class
 class Game:
     def __init__(self):
@@ -617,9 +635,15 @@ class Game:
             elif curMode == 2:
                 puzGoal.change(str(numRotateTotal) + ' rotations')
 
+        #highlight for visual cue
+        hi = Highlight()
+
         #actually displays everything
         allsprites = pygame.sprite.LayeredUpdates()
-        allsprites.add((allBlocks, timeText, objective, puzGoal))
+        for block in allBlocks:
+            allsprites.add(block)
+        allsprites.add(hi)
+        allsprites.add((timeText, objective, puzGoal))
         allsprites.add(solved)
         allsprites.add(cursor)
         
@@ -885,6 +909,8 @@ class Game:
                     if event.get_grab():
                         #debugText += ' holding mouse button 1'
                         # and block.isGrabbed() == False
+                        allsprites.move_to_front(block)
+                        allsprites.move_to_front(cursor)
                         if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
                             anotherBlock = 0
                             for blockB in allBlocks:
@@ -910,6 +936,11 @@ class Game:
                                 isLast.grab(place)
                                 isRan = 0
                         block.setGrabbed(False)
+                    if cursor.rect.x > block.rect.x and cursor.rect.x < block.rect.x +96 and cursor.rect.y > block.rect.y and cursor.rect.y < block.rect.y + 96:
+                        hi.setpos([block.rect.x,block.rect.y])
+                        break
+                    else:
+                        hi.setpos([1300,1000])
             #board editor
             elif editMode:
                 if event.get_grab():
@@ -1054,7 +1085,7 @@ class MainMenu():
         self.menuWI = load_image('menuWithInst.png')
         self.subAdd = load_image('subAdd.png')
         self.gModes = load_image('modesMain.png')
-        self.hi = load_image('hilite.png')
+        self.hi = load_image('mainhi.png', True)
         self.leftArrow = load_image('left.png')
         self.rightArrow = load_image('right.png')
         self.button = load_image('button.png')
@@ -1317,18 +1348,18 @@ class MainMenu():
                     if self.modeBool == True and not self.goodLoad:
                         #which is selected?
                         if self.curSel == 1:
-                            self.menuImg.blit(self.hi,(126,198))
+                            self.menuImg.blit(self.hi,(110,206))
                         elif self.curSel == 2:
-                            self.menuImg.blit(self.hi,(126,377))
+                            self.menuImg.blit(self.hi,(110,385))
                         elif self.curSel == 3:
-                            self.menuImg.blit(self.hi,(126,572))                        
+                            self.menuImg.blit(self.hi,(110,580))                        
 
                         #click on time attack
                         if cursor.rect.x > 109 and cursor.rect.x < 435 and cursor.rect.y > 176 and cursor.rect.y < 354:
                             self.curSel = 1
                             self.menuImg.blit(self.gModes, (101,167))
                             #which is selected?
-                            self.menuImg.blit(self.hi,(126,198))
+                            self.menuImg.blit(self.hi,(110,206))
 
                         #click on puzzle
                         if cursor.rect.x > 109 and cursor.rect.x < 435 and cursor.rect.y > 366 and cursor.rect.y < 540:
@@ -1336,7 +1367,7 @@ class MainMenu():
                             self.menuImg.blit(self.gModes, (101,167))
                             self.selDiff = 1
                             #which is selected?
-                            self.menuImg.blit(self.hi,(126,377))
+                            self.menuImg.blit(self.hi,(110,385))
 
                         #click on story
                         if cursor.rect.x > 109 and cursor.rect.x < 435 and cursor.rect.y > 550 and cursor.rect.y < 730:
@@ -1345,7 +1376,7 @@ class MainMenu():
                             self.menuImg = load_image('bg.png')
                             self.menuImg.blit(self.gModes, (101,167))
                             #which is selected?
-                            self.menuImg.blit(self.hi,(126,572))
+                            self.menuImg.blit(self.hi,(110,580))
 
                         #if time attack or puzzle mode is selected
                         if self.curSel == 1 or self.curSel == 2:
