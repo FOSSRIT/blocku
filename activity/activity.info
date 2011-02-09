@@ -1,6 +1,6 @@
 [Activity]
 name = Blocku 
-activity_version = 1
+activity_version = 2
 host_version = 1
 service_name = edu.rit.foss.blocku
 icon = blocku
