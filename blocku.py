@@ -628,7 +628,8 @@ class Game:
                 for i in range(5):
                     highScores.append(ff.readline())
                 for i in range(len(highScores)):
-                    highScores[i] = highScores[i][0:-1]
+                    highScores[i] = highScores[i].rstrip('\n')
+                    highScores[i] = highScores[i][:-1]
                     rec = font.render(highScores[i],1,(0,0,0))
                     background.blit(rec,[25,240+(40*i)])
                 ff.close()
@@ -698,12 +699,13 @@ class Game:
         east = 0
         s = 0
         w = 0
+	
+	#for block saving
+        numBlocks = 0
+        blocksToWrite = []
+        blocksToWrite.append(["0"])
 
-        while 1:
-            #for block writing
-            numBlocks = 0
-            blocksToWrite = []
-        
+        while 1:        
             loopCounter += 1
             #timer code
 
@@ -786,13 +788,14 @@ class Game:
                        
                     #save custom created board
                     else:
+			#blocksToWrite.append["0"]
                         if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                             for block in allBlocks:
-                                if int(block.north) != 0 and int(block.east) != 0 and int(block.south) != 0 and int(block.west) != 0:
+                                if (not int(block.north) == 0) and (not int(block.east) == 0) and (not int(block.south) == 0) and (not int(block.west) == 0):
                                     blocksToWrite.append(str(block.rect.x) + " " + str(block.rect.y) + " " + str(block.north) + " " + str(block.east) + " " + str(block.south) + " " + str(block.west))
                                     numBlocks += 1
                             if numBlocks > 0:
-                                blocksToWrite.append("0")
+				#blocksToWrite.append["0"]
                                 boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10, False)
                                 allsprites.update()
                                 screen.blit(background, (0,0))
@@ -802,11 +805,17 @@ class Game:
                                 
                                 blocksToWrite[0] = str(numBlocks)
                                 blocksToWrite.append(objText)
-                                temp = open("data" + os.sep + "boardList.txt", 'a')
-                                temp.write(boardName + "\n")
+                                temp = open("data" + os.sep + "boardList.txt", 'r')
+                                tempList = (temp.read()).rsplit('\n')
+                                tempList = tempList[:-1]
+                                temp = file("data" + os.sep + "boardList.txt", 'w')
+                                temp.write(boardName + '\n')
+                                for line in tempList:
+                                    temp.write(line + '\n')
                                 temp.close()
                                 f = open("boards" + os.sep + boardName + ".txt", 'w')
                                 for line in blocksToWrite:
+				    #print line
                                     f.write(line + "\n")
                                 f.close()
                             else:
@@ -861,6 +870,7 @@ class Game:
                                 f = open("boards" + os.sep + boardName + ".txt", 'w')
                                 for line in blocksToWrite:
                                     f.write(line + "\n")
+                                f.write('\n')
                                 f.close()
                             else:
                                 timeText.change("Make at least one block")
@@ -1014,8 +1024,8 @@ class Game:
             self.clock.tick(30)
             
 class Text(pygame.sprite.Sprite):
-    text = ''
-    def __init__(self,txt='',x=0,y=0,clr='black',size=42):
+    text = ' '
+    def __init__(self,txt=' ',x=0,y=0,clr='black',size=42):
         pygame.sprite.Sprite.__init__(self)
         self.font = pygame.font.Font(None, size)
         self.color = Color(clr)
@@ -1025,9 +1035,9 @@ class Text(pygame.sprite.Sprite):
 
     def update(self):
         msg = self.text
-        self.image = self.font.render(msg, 0, self.color)
+        self.image = self.font.render(msg, 1, self.color)
 
-    def change(self, new=''):
+    def change(self, new=' '):
         self.text = new
         self.update()
     
@@ -1121,9 +1131,10 @@ class MainMenu():
         self.loop()
 
     def loadList(self):
-        ff = file('data' + os.sep + 'boardList.txt', 'r')
+        ff = open('data' + os.sep + 'boardList.txt', 'r')
         temp = ff.read()
         self.boardList = temp.split('\n')
+        self.boardList = self.boardList[:-1]
 
     def truncline(self, text, font, maxwidth):
         real=len(text)       
@@ -1553,7 +1564,7 @@ class MainMenu():
                 #textbox
                 if self.curSel == 3 and self.modeBool == True:
                     if event.type == KEYDOWN and event.key == K_BACKSPACE:
-                        self.text = self.text[0:-1]
+                        self.text = self.text[:-1]
                     elif event.type == KEYDOWN and (event.key == K_RETURN or event.key == K_SPACE):
                         pass
                     elif event.type == KEYDOWN:
