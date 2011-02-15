@@ -306,6 +306,22 @@ def load_sound(file):
         print('Warning, unable to load,', file)
     return dummysound()
 
+#Dictionary load in for different language strings
+def loadDictionary(language):
+    lang = {}
+    tempLines = []
+    tempKey = ''
+    tempVal = ''
+    f = open('data' + os.sep + language, 'r')
+    tempLines = f.readlines()
+    f.close()
+    for line in tempLines:
+	tempKey = line.rsplit('<>')[0]
+	tempVal = line.rsplit('<>')[1][1:-2]
+#	tempVal = ''.join([c for c in tempVal if c in '\"'])
+	lang[tempKey] = tempVal
+    return lang
+
         
 #block class. this is the block with the numbers on it.
 #http://www.pygame.org/docs/tut/chimp/chimp.py.html
@@ -427,10 +443,12 @@ class Highlight(pygame.sprite.Sprite):
 
 #the main game class
 class Game:
+    strings = {}
     def __init__(self):
         # Set up a clock for managing the frame rate.
         self.clock = pygame.time.Clock()
         self.paused = False
+	self.strings = loadDictionary('bl_english.txt')
 
     def set_paused(self, paused):
         self.paused = paused
@@ -580,11 +598,11 @@ class Game:
                     else:
                         objective.change(LastLine(name))
                 elif curMode == 1 and dif < 3:
-                     objective.change('Arrange blocks so that addition equals ' + str(answer))
+                     objective.change(self.strings['arrangeAddition'] + str(answer))
                 elif curMode == 1 and dif > 2:
-                    objective.change('Arrange and rotate blocks so that addition equals ' + str(answer))
+                    objective.change(self.strings['arrangeAdditionRotate'] + str(answer))
                 elif curMode == 2:
-                    objective.change('Rotate blocks so that addition equals ' + str(answer))
+                    objective.change(self.strings['rotateAddition'] + str(answer))
             else:
                 if curMode == 3:
                     if name == 'boardMaker':
@@ -592,27 +610,27 @@ class Game:
                     else:
                         objective.change(LastLine(name))
                 elif curMode == 1 and dif < 3:
-                     objective.change('Arrange blocks so that subtraction equals ' + str(answer))
+                     objective.change(self.strings['arrangeSubtraction'] + str(answer))
                 elif curMode == 1 and dif > 2:
-                    objective.change('Arrange and rotate blocks so that subtraction equals ' + str(answer))
+                    objective.change(self.strings['arrangeSubtractionRotate'] + str(answer))
                 elif curMode == 2:
-                    objective.change('Rotate blocks so that subtraction equals ' + str(answer))
+                    objective.change(self.strings['rotateSubtraction'] + str(answer))
             solved = Text('',400,240,'red',142)  #Text for when solved
             timeText = Text('',375,25,'black',89) #text to display time elapsed
             puzGoal = Text('',20,242,'black',42) #Text for puzzle mode goal
 
             font = pygame.font.Font(None, 42)
-            toMenu = font.render("Main Menu", 1, (0,0,0))
+            toMenu = font.render(self.strings['mainMenu'], 1, (0,0,0))
             if curMode == 2:
-                goal = font.render("Try to beat:", 1, (0,0,0))
+                goal = font.render(self.strings['tryToBeat'], 1, (0,0,0))
             elif curMode == 1 or curMode == 3:
-                goal = font.render("Recent Times:", 1, (0,0,0))
+                goal = font.render(self.strings['recentTime'], 1, (0,0,0))
                 
             if not editMode:
                 background.blit(goal,[20,200])
-                check = font.render("Check Answer", 1, (0,0,0))
+                check = font.render(self.strings['checkAnswer'], 1, (0,0,0))
             else:
-                check = font.render("Save board", 1, (0,0,0))
+                check = font.render(self.strings['saveBoard'], 1, (0,0,0))
             background.blit(toMenu,[30,840])
             background.blit(check,[978,840])
             pygame.display.flip()
@@ -630,13 +648,13 @@ class Game:
                     highScores.append(ff.readline())
                 for i in range(len(highScores)):
                     highScores[i] = highScores[i].rstrip('\n')
-		    highScores[i] = highScores[i][:-1]
+		    #highScores[i] = highScores[i][:-1]
                     rec = font.render(highScores[i],1,(0,0,0))
                     background.blit(rec,[25,240+(40*i)])
                 ff.close()
 
             elif curMode == 2:
-                puzGoal.change(str(numRotateTotal) + ' rotations')
+                puzGoal.change(str(numRotateTotal) + self.strings['rotations'])
 
         #highlight for visual cue
         hi = Highlight()
@@ -700,13 +718,19 @@ class Game:
         east = 0
         s = 0
         w = 0
+
+	failed = False
 	
 	#for block saving
 	numBlocks = 0
 	blocksToWrite = []
 	blocksToWrite.append(["0"])
 
-        while 1:        
+        while 1:
+	    #Ran out of time
+	    if mins == 0 and timer == 0 and cas == 0:
+		completed = True
+		failed = True        
             loopCounter += 1
             #timer code
 
@@ -730,7 +754,7 @@ class Game:
                             mins += 1
                             timer = 0
                     curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
-                    timeText.change('Time Elapsed ' + curTime)
+                    timeText.change(self.strings['timeElapsed'] + curTime)
                 elif not curMode == 2 and cas == 0:
                     #dif 1 2 3 4
                     if not completed:
@@ -743,9 +767,9 @@ class Game:
                             timer = 59
                     curTime = emptyMin + str(mins) + ':' + emptySec + str(timer)
                     if not completed:
-                        timeText.change('Time Remaining ' + curTime)
+                        timeText.change(self.strings['timeRemaining'] + curTime)
                 elif curMode == 2:
-                    timeText.change('Number of Rotations: ' + str(numRotate))
+                    timeText.change(self.strings['numOfRotations'] + str(numRotate))
 
             #clear the incomplete text after a moment
             if loopCounter > 50:
@@ -780,11 +804,11 @@ class Game:
                             if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                                     result = Solve(allBlocks)
                                     if result == 'Solved!':
-                                        solved.change('You Win!')
+                                        solved.change(self.strings['win'])
                                         completed = True
                                     else:
                                         loopCounter = 0
-                                        solved.change('Incomplete')
+                                        solved.change(self.strings['incomplete'])
 
                        
                     #save custom created board
@@ -797,12 +821,12 @@ class Game:
                                     numBlocks += 1
                             if numBlocks > 0:
 				#blocksToWrite.append["0"]
-                                boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10, False)
+                                boardName = ask(self.screen, self.strings['boardName'], 529, 10, 450, 30, 42, False, 10, False)
                                 allsprites.update()
                                 screen.blit(background, (0,0))
                                 allsprites.draw(screen)
                                 pygame.display.flip()
-                                objText = ask(self.screen, "Enter Objective Text", 250, 10, 750, 30, 30, False, 60)
+                                objText = ask(self.screen, self.strings['objectiveText'], 250, 10, 750, 30, 30, False, 60)
                                 
                                 blocksToWrite[0] = str(numBlocks)
                                 blocksToWrite.append(objText)
@@ -823,7 +847,7 @@ class Game:
                                     f.write(line + "\n")
                                 f.close()
                             else:
-                                timeText.change("Make at least one block")
+                                timeText.change(self.strings['atLeastOne'])
                                 
                      #main menu button
                     if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
@@ -844,11 +868,11 @@ class Game:
                                 if cursor.rect.x > 954 and cursor.rect.x < 1200 and cursor.rect.y > 809 and cursor.rect.y < 900:
                                         result = Solve(allBlocks)
                                         if result == 'Solved!':
-                                            solved.change('You Win!')
+                                            solved.change(self.strings['win'])
                                             completed = True
                                         else:
                                             loopCounter = 0
-                                            solved.change('Incomplete')
+                                            solved.change(self.strings['incomplete'])
 
                             
                         #save custom created board
@@ -861,12 +885,12 @@ class Game:
                                         numBlocks += 1
                                 if numBlocks > 0:
 			    	    #blocksToWrite.append["0"]
-                                    boardName = ask(self.screen, "Board Name", 529, 10, 450, 30, 42, False, 10, False)
+                                    boardName = ask(self.screen, self.strings['boardName'], 529, 10, 450, 30, 42, False, 10, False)
                                     allsprites.update()
                                     screen.blit(background, (0,0))
                                     allsprites.draw(screen)
                                     pygame.display.flip()
-                                    objText = ask(self.screen, "Enter Objective Text", 250, 10, 750, 30, 30, False, 60)
+                                    objText = ask(self.screen, self.strings['objectiveText'], 250, 10, 750, 30, 30, False, 60)
                                     
                                     blocksToWrite[0] = str(numBlocks)
                                     blocksToWrite.append(objText)
@@ -888,7 +912,7 @@ class Game:
                                         f.write(line + "\n")
                                     f.close()
                                 else:
-                                    timeText.change("Make at least one block")
+                                    timeText.change(self.strings['atLeastOne'])
                        #main menu button
                         if cursor.rect.x > 0 and cursor.rect.x < 240 and cursor.rect.y > 809 and cursor.rect.y < 900:
                             mainMenu = MainMenu()
@@ -996,7 +1020,7 @@ class Game:
             if not event.get_grab():
                 hi.setpos([1300,900])
             
-            if completed and nname == 'null':
+            if completed and nname == 'null' and not failed:
                 wName = load_image('winName.png')
                 screen.blit(wName,(374,231))
                 nname = ask(self.screen, "Name", 400, 382, 300, 30, 42, False, 8)
@@ -1029,6 +1053,8 @@ class Game:
                     for score in highScores:
                         scores.write(score + '\n')
                     scores.close()
+	    elif failed:
+		solved.change("Out of time")
 
             #update everything
             allsprites.update()
@@ -1102,9 +1128,14 @@ class MainMenu():
     goodLoad = False
     boardList = []
     listCounter = 0
+    strings = {}
     def __init__(self):
         self.paused = False
         self.clock = pygame.time.Clock()
+	
+
+	#load language strings
+	self.strings = loadDictionary('bl_english.txt')
 
         #set the screen up
         winstyle = 0  # |FULLSCREEN
@@ -1142,7 +1173,7 @@ class MainMenu():
         screen.blit(self.menuImg, (0,0))
 
         text = pygame.font.Font(None, 42)
-        self.welp = self.wrapline('Use the mouse or Game keys to move the blocks so that the numbers next to each other solve the objective. Click, spacebar, or Cross to drag, Return or checkmark to rotate.',text,500)
+        self.welp = self.wrapline(self.strings['instructions'],text,500)
         
         self.addText()
         pygame.display.flip()
@@ -1201,38 +1232,38 @@ class MainMenu():
             font = pygame.font.Font(None, 50)
 
             #Exit
-            exitt = font.render("Exit", 1, (255,255,255))
+            exitt = font.render(self.strings['exit'], 1, (255,255,255))
             self.screen.blit(exitt,[570,810])
 
             if self.modeBool == False:
                 #Game Modes
-                gMode = font.render("Game Modes", 1, (255,255,255))
+                gMode = font.render(self.strings['gModes'], 1, (255,255,255))
                 self.screen.blit(gMode,[520,660])
             else:
                 #apply and close for gModes
                 closeG = pygame.font.Font(None, 38)
-                close = closeG.render("Apply",1,(0,0,0))
+                close = closeG.render(self.strings['apply'],1,(0,0,0))
                 self.screen.blit(close,[995,692])
 
                 #Time attack       126,198
                 tAttack = pygame.font.Font(None, 55)
-                time = tAttack.render("Time Attack",1,(0,0,0))
+                time = tAttack.render(self.strings['timeAttack'],1,(0,0,0))
                 self.screen.blit(time,[149,250])
 
                 #Puzzle            126,377
                 puzzle = pygame.font.Font(None, 55)
-                puz = puzzle.render("Puzzle",1,(0,0,0))
+                puz = puzzle.render(self.strings['puzzle'],1,(0,0,0))
                 self.screen.blit(puz,[149,430])
 
                 #Story Mode              126,572
                 stryMode = pygame.font.Font(None, 55)
-                stry = stryMode.render("Custom Game",1,(0,0,0))
+                stry = stryMode.render(self.strings['custom'],1,(0,0,0))
                 self.screen.blit(stry,[149,625])
 
             #instructions panel
             if self.instBool == True:
                 newFont = pygame.font.Font(None, 100)
-                instTitle = newFont.render("Instructions", 1, (255,0,0))
+                instTitle = newFont.render(self.strings['inst'], 1, (255,0,0))
                 self.screen.blit(instTitle,[390,310])
                 
                 for i in range(len(self.welp)):
@@ -1241,16 +1272,16 @@ class MainMenu():
                     self.screen.blit(newInst,[370,370+(28*i)])
 
                 closeF = pygame.font.Font(None, 28)
-                close = closeF.render("Close",1,(255,0,0))
+                close = closeF.render(self.strings['close'],1,(255,0,0))
                 self.screen.blit(close,[800,577])
                 
             elif self.modeBool == False:
                 #New Game
-                new = font.render("New Game", 1, (255, 255, 255))
+                new = font.render(self.strings['newGame'], 1, (255, 255, 255))
                 self.screen.blit(new, [530,375])
 
                 #Instructions
-                instructs = font.render("Instructions", 1, (255,255,255))
+                instructs = font.render(self.strings['inst'], 1, (255,255,255))
                 self.screen.blit(instructs,[520,520])
 
     def rangeChange(self, change):
@@ -1422,7 +1453,7 @@ class MainMenu():
                         #if time attack or puzzle mode is selected
                         if self.curSel == 1 or self.curSel == 2:
                             
-                            difficulty = pygame.font.Font(None,42).render("Select Difficulty",1,(0,0,0))
+                            difficulty = pygame.font.Font(None,42).render(self.strings['selectDifficulty'],1,(0,0,0))
                             self.menuImg.blit(difficulty,(526,498))
 
                             self.menuImg.blit(self.subAdd, (511,72))
@@ -1432,7 +1463,7 @@ class MainMenu():
                             self.menuImg.blit(self.rightArrow,(909,543))
 
                             if self.curSel == 1:
-                                numRange = pygame.font.Font(None,42).render("Select Number Range",1,(0,0,0))
+                                numRange = pygame.font.Font(None,42).render(self.strings['selectNumber'],1,(0,0,0))
                                 self.menuImg.blit(numRange,(526,348))
                                 self.menuImg.blit(self.leftArrow,(529,391))
                                 self.menuImg.blit(self.rightArrow,(909,391))
@@ -1455,7 +1486,7 @@ class MainMenu():
                                 if cursor.rect.x > 909 and cursor.rect.x < 934 and cursor.rect.y > 254 and cursor.rect.y < 296:
                                     self.casChange()
                             else:
-                                numRange = pygame.font.Font(None,42).render("Select Number Range",1,(0,0,0))
+                                numRange = pygame.font.Font(None,42).render(self.strings['selectNumber'],1,(0,0,0))
                                 self.menuImg.blit(numRange,(526,298))
                                 self.menuImg.blit(self.leftArrow,(529,341))
                                 self.menuImg.blit(self.rightArrow,(909,341))
@@ -1507,17 +1538,17 @@ class MainMenu():
                             
                             self.menuImg.blit(self.button,(546,215))
                             
-                            difficulty = pygame.font.Font(None,42).render("Select Difficulty",1,(0,0,0))
+                            difficulty = pygame.font.Font(None,42).render(self.strings['selectDifficulty'],1,(0,0,0))
                             self.menuImg.blit(difficulty,(526,498))
 
-                            boardEnter = pygame.font.Font(None,42).render("Enter the name of board",1,(0,0,0))
+                            boardEnter = pygame.font.Font(None,42).render(self.strings['enterBoardName'],1,(0,0,0))
                             self.menuImg.blit(boardEnter,(526,350))
 
-                            createText = pygame.font.Font(None,42).render("Create a board",1,(0,0,0))
+                            createText = pygame.font.Font(None,42).render(self.strings['createBoard'],1,(0,0,0))
                             self.menuImg.blit(createText,(570,225))
 
                             #delete button
-                            delText = pygame.font.Font(None,40).render("Delete",1,(0,0,0))
+                            delText = pygame.font.Font(None,40).render(self.strings['delete'],1,(0,0,0))
                             self.menuImg.blit(self.delButton,(981,371))
                             self.menuImg.blit(delText,(985,380))
                             
@@ -1573,7 +1604,7 @@ class MainMenu():
                                         ff.close()
                                 else:
                                     self.goodLoad = False
-                                    self.text = 'File does not exist'
+                                    self.text = strings['noExist']
                                     continue
                             self.menuImg = load_image('bg.png')
                             self.screen.blit(self.menuImg, (0,0))
@@ -1597,9 +1628,9 @@ class MainMenu():
 
                 #display defaults
                 if self.selSubtraction == 0 and self.modeBool == True and (self.curSel == 1 or self.curSel == 2):
-                    self.selSub.change('Addition')
+                    self.selSub.change(self.strings['add'])
                 else:
-                    self.selSub.change('Subtraction')
+                    self.selSub.change(self.strings['sub'])
                     
                 if self.modeBool == True and (self.curSel == 1 or self.curSel == 2):
                     if self.curSel == 2:
@@ -1621,24 +1652,24 @@ class MainMenu():
                             self.selRng.change('100 - 999')
                             
                         if self.cas == 1:
-                            self.selCas.change('Casual')
+                            self.selCas.change(self.strings['casual'])
                         else:
-                            self.selCas.change('Against Time')
+                            self.selCas.change(self.strings['againstTime'])
 
                     if self.curSel == 1:
                         if self.selDiff == 1:
-                            self.selDifficulty.change('3 x 3 No Rotation')
+                            self.selDifficulty.change(self.strings['sNoRotation'])
                         elif self.selDiff == 2:
-                            self.selDifficulty.change('4 x 4 No Rotation')
+                            self.selDifficulty.change(self.strings['lNoRotation'])
                         elif self.selDiff == 3:
-                            self.selDifficulty.change('3 x 3 With Rotation')
+                            self.selDifficulty.change(self.strings['sWithRotation'])
                         elif self.selDiff == 4:
-                            self.selDifficulty.change('4 x 4 With Rotation')
+                            self.selDifficulty.change(self.strings['lWithRotation'])
                     else:
                         if self.selDiff == 1:
-                            self.selDifficulty.change('3 x 3 With Rotation')
+                            self.selDifficulty.change(self.strings['sWithRotation'])
                         elif self.selDiff == 2:
-                            self.selDifficulty.change('4 x 4 With Rotation')
+                            self.selDifficulty.change(self.strings['lWithRotation'])
                         
                 elif self.modeBool == True and self.curSel == 3:
                     self.selRng.change('')
@@ -1646,9 +1677,9 @@ class MainMenu():
                     self.selCas.change('')
                     self.selRng2.change('')
                     if self.selDiff == 1:
-                        self.selDifficulty.change('No Rotation')
+                        self.selDifficulty.change(self.strings['noRotation'])
                     elif self.selDiff == 2:
-                        self.selDifficulty.change('With Rotation')
+                        self.selDifficulty.change(self.strings['withRotation'])
                 else:
                     self.selRng2.change('')
                     self.selRng.change('')
