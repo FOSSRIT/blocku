@@ -316,10 +316,10 @@ def loadDictionary(language):
     tempLines = f.readlines()
     f.close()
     for line in tempLines:
-	tempKey = line.rsplit('<>')[0]
-	tempVal = line.rsplit('<>')[1][1:-2]
-#	tempVal = ''.join([c for c in tempVal if c in '\"'])
-	lang[tempKey] = tempVal
+        tempKey = line.rsplit('<>')[0]
+        tempVal = line.rsplit('<>')[1][1:-2]
+        #tempVal = ''.join([c for c in tempVal if c in '\"'])
+        lang[tempKey] = tempVal
     return lang
 
         
@@ -448,7 +448,7 @@ class Game:
         # Set up a clock for managing the frame rate.
         self.clock = pygame.time.Clock()
         self.paused = False
-	self.strings = loadDictionary('bl_english.txt')
+        self.strings = loadDictionary('bl_english.txt')
 
     def set_paused(self, paused):
         self.paused = paused
@@ -719,18 +719,18 @@ class Game:
         s = 0
         w = 0
 
-	failed = False
+        failed = False
 	
 	#for block saving
-	numBlocks = 0
-	blocksToWrite = []
-	blocksToWrite.append(["0"])
+        numBlocks = 0
+        blocksToWrite = []
+        blocksToWrite.append(["0"])
 
         while 1:
 	    #Ran out of time
-	    if mins == 0 and timer == 0 and cas == 0:
-		completed = True
-		failed = True        
+            if mins == 0 and timer == 0 and cas == 0:
+                completed = True
+                failed = True        
             loopCounter += 1
             #timer code
 
@@ -832,13 +832,13 @@ class Game:
                                 blocksToWrite.append(objText)
 		
 				#add teh board to the list of available boards
-				temp = open("data" + os.sep + "boardList.txt", 'r')
-				tempList = (temp.read()).rsplit('\n')
-				tempList = tempList[:-1]
-				temp = file("data" + os.sep + "boardList.txt", 'w')
-				temp.write(boardName + '\n')
-				for line in tempList:
-				    temp.write(line + '\n')
+                                temp = open("data" + os.sep + "boardList.txt", 'r')
+                                tempList = (temp.read()).rsplit('\n')
+                                tempList = tempList[:-1]
+                                temp = file("data" + os.sep + "boardList.txt", 'w')
+                                temp.write(boardName + '\n')
+                                for line in tempList:
+                                    temp.write(line + '\n')
                                 temp.close()
 				#write the actual board itself
                                 f = open("boards" + os.sep + boardName + ".txt", 'w')
@@ -896,13 +896,13 @@ class Game:
                                     blocksToWrite.append(objText)
 				    
 				    #add the boardname to the list of boards available
-				    temp = open("data" + os.sep + "boardList.txt", 'r')
-				    tempList = (temp.read()).rsplit('\n')
-				    tempList = tempList[:-1]
-				    temp = file("data" + os.sep + "boardList.txt", 'w')
-				    temp.write(boardName + '\n')
-				    for line in tempList:
-				        temp.write(line + '\n')
+                                    temp = open("data" + os.sep + "boardList.txt", 'r')
+                                    tempList = (temp.read()).rsplit('\n')
+                                    tempList = tempList[:-1]
+                                    temp = file("data" + os.sep + "boardList.txt", 'w')
+                                    temp.write(boardName + '\n')
+                                    for line in tempList:
+                                        temp.write(line + '\n')
                                     temp.close()
 				    
    			  	    #write the board itself
@@ -960,7 +960,7 @@ class Game:
                         #debugText += ' holding mouse button 1'
                         # and block.isGrabbed() == False
                         allsprites.move_to_front(block)
-			allsprites.move_to_front(solved)
+                        allsprites.move_to_front(solved)
                         allsprites.move_to_front(hi)
                         allsprites.move_to_front(cursor)
                         if block.rect.collidepoint([cursor.rect.x,cursor.rect.y]):
@@ -973,6 +973,7 @@ class Game:
                             if anotherBlock == 0:
                                 if curMode == 1 or curMode == 3:
                                     block.grab([cursor.rect.x, cursor.rect.y])
+                                    hi.setpos([block.rect.x,block.rect.y])
                                 block.setGrabbed(True)
                                 for tempblock in allBlocks:
                                     tempblock.isLast = 0
@@ -1053,8 +1054,8 @@ class Game:
                     for score in highScores:
                         scores.write(score + '\n')
                     scores.close()
-	    elif failed:
-		solved.change("Out of time")
+            elif failed:
+                solved.change("Out of time")
 
             #update everything
             allsprites.update()
@@ -1135,14 +1136,14 @@ class MainMenu():
 	
 
 	#load language strings
-	self.strings = loadDictionary('bl_english.txt')
+        self.strings = loadDictionary('bl_english.txt')
 
         #set the screen up
         winstyle = 0  # |FULLSCREEN
         bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
         screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
-	
-	self.loadList()
+
+        self.loadList()
 	#for l in self.boardList:
 	#    print l
         self.text = self.boardList[0]
@@ -1183,10 +1184,7 @@ class MainMenu():
         ff = open('data' + os.sep + 'boardList.txt', 'r')
         temp = ff.read()
         self.boardList = temp.split('\n')
-	#for i in range(len(self.boardList)):
-	#    self.boardList[i] = self.boardList[i].rstrip('\n')
-	#    self.boardList[i] = self.boardList[i][:-1]
-	self.boardList = self.boardList[:-1]
+        self.boardList = self.boardList[:-1]
 
     def truncline(self, text, font, maxwidth):
         real=len(text)       
@@ -1577,7 +1575,7 @@ class MainMenu():
                                 for i in range(len(self.boardList)-1):
                                     if not self.boardList[i] == self.text:
                                         toDeleteFile.write(self.boardList[i]+'\n')
-				toDeleteFile.write('\n')
+                                toDeleteFile.write('\n')
                                 toDeleteFile.close()
                                 os.remove("boards" + os.sep + self.text + ".txt")
                                 if os.path.isfile("scores" + os.sep + self.text + "Scores.txt"):
