@@ -261,8 +261,9 @@ def LoadBoard(nm, directory='boards'):
         for i in range(int(numLines)):
             line = file.readline()
             args = line.rsplit()
+	    #save file is (x,y,n,e,s,w)
             #blocks are Block(n,e,s,w,x,y) xy= starting position
-            blocks[i] = Block(args[2], args[5], args[3], args[4], int(args[0]), int(args[1]))
+            blocks[i] = Block(args[2], args[3], args[4], args[5], int(args[0]), int(args[1]))
 
         file.close()
     except:
@@ -648,7 +649,8 @@ class Game:
                     highScores.append(ff.readline())
                 for i in range(len(highScores)):
                     highScores[i] = highScores[i].rstrip('\n')
-		    #highScores[i] = highScores[i][:-1]
+		    if curMode == 1:
+			highScores[i] = highScores[i][:-1]
                     rec = font.render(highScores[i],1,(0,0,0))
                     background.blit(rec,[25,240+(40*i)])
                 ff.close()
@@ -1598,11 +1600,11 @@ class MainMenu():
                                     if not os.path.isfile("scores" + os.sep + self.text + "Scores.txt"):
                                         ff = file("scores" + os.sep + self.text + "Scores.txt", 'w')
                                         for i in range(4):
-                                            ff.write("Kaeedo 0:42\n")
+                                            ff.write("Kaeedo 0:42 \n")
                                         ff.close()
                                 else:
                                     self.goodLoad = False
-                                    self.text = strings['noExist']
+                                    self.text = self.strings['noExist']
                                     continue
                             self.menuImg = load_image('bg.png')
                             self.screen.blit(self.menuImg, (0,0))
